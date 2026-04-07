@@ -1,6 +1,8 @@
 # SonoWorld: From One Image to a 3D Audio-Visual Scene (CVPR 2026)
 
 > Official implementation of the CVPR 2026 paper _"SonoWorld: From One Image to a 3D Audio-Visual Scene."_
+> 
+> Code & dataset coming soon!
 
 ## Citation
 If you find our work useful, please cite:
