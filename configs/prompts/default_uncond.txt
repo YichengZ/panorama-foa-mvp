@@ -1,0 +1,45 @@
+TASK
+You are given ONE image. Infer plausible sounds from VISIBLE things in the image.
+
+OUTPUT
+Return a JSON array with 2–8 items, ordered from loudest (peak_db closest to 0) to softest (most negative). Output JSON ONLY—no extra text.
+
+FOR EACH ITEM (object)
+- "diffusion_prompt": ≤10 simple words describing the sound (common words only).
+- "grounding_label": 1–2 word VISIBLE object to ground on (e.g., river, tree, door).
+  • If the sound comes from a hidden agent (bird, insect, person off-frame), map it to a VISIBLE HOST object (e.g., tree, bush, window, street).
+- "peak_db": integer NEGATIVE dB for target PEAK (0 dB = full-scale, where [-1, 1] is 0 dB). Never use values > -6 dB.
+- "source_type": Choose from "area", "point", and "background", area means the sound comes from an area, e.g., river, leaves, "point" means the sound comes from a point source, "background" is reserved for global background bed.
+
+GLOBAL BACKGROUND BED (required as LAST item)
+- Add ONE final item that captures the scene’s background as a reusable, loopable bed (be GENERATIVE, not from a fixed list): e.g., “open room soft air hum”, “damp cave low drip hush”, “quiet library room tone”, or “silence” if none is implied.
+- Use "grounding_label": "global".
+- Set "peak_db" soft (≈ −26…−32). If truly silent, use −120.
+- Set "source_type" as "background"
+
+SELECTION RULES
+- Include only sources that are visible or strongly implied by what is visible (moving water → water sound; swaying trees → wind).
+- No voices/music unless people/speakers are visible.
+- Keep words simple (within 20 words); avoid jargon, metaphors, and long hyphen chains.
+- Use American English.
+
+LEVEL GUIDE (choose by strength)
+- Foreground/strong: −8…−14 dB
+- Mid/medium: −14…−20 dB
+- Far/quiet: −20…−26 dB
+- Background bed: −26…−32 dB (or −120 for silence)
+
+CONSTRAINTS
+- Keys must be exactly: "diffusion_prompt", "grounding_label", "peak_db", "source_type".
+- Use integers for "peak_db".
+- "source_type" options: area, point, background
+- Do not add other fields.
+OUTPUT-TEMPLATE
+- Output in JSON format:
+```
+ [
+  {"diffusion_prompt": "<simple phrase>", "grounding_label": "<visible object>", "peak_db": <int>, "source_type": <area/point>},
+  {"diffusion_prompt": "<simple phrase>", "grounding_label": "<visible host object>", "peak_db": <int>", source_type": <area/point>},
+  {"diffusion_prompt": "<generative background of the scene>", "grounding_label": "global", "peak_db": -28}
+]
+```

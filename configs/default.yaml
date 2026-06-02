@@ -1,0 +1,53 @@
+runtime:
+  device: cuda
+  low_vram: false
+
+stages:
+  outpainting:
+    enabled: true
+    class_path: sonoworld.stages.outpainting.flux_fill.FluxOutpaintingStage
+    prompt: "A high quality 360 panorama photo, HDR, RAW, 360 consistent, omnidirectional."
+
+  understanding:
+    enabled: true
+    class_path: sonoworld.stages.understanding.gpt.GPTUnderstandingStage
+    model: gpt-4.1
+
+  visual_scene:
+    enabled: true
+    class_path: sonoworld.stages.visual_scene.marble.MarbleVisualSceneStage
+    mode: manual
+
+  segmentation:
+    enabled: true
+    class_path: sonoworld.stages.segmentation.sam3.SAM3SegmentationStage
+    sam3_root: <your_sam3_root_path>
+    checkpoint_path: null
+    load_from_hf: true
+    processor_resolution: 1008
+    model_confidence_threshold: 0.0
+    max_pano_height: 1024
+    fov_x: 60.0
+    fov_y: 90.0
+    n_cam: 12
+    tile_resolution_w: 640
+    default_score_threshold: 0.7
+    global_vote_threshold: 0.5
+    refine_iou_threshold: 0.8
+    min_mask_area: 16
+    max_instances_per_label: 50
+    save_tiles: true
+    dump_all_pano_candidates: false
+
+  audio_generation:
+    enabled: true
+    class_path: sonoworld.stages.audio_generation.mmaudio.MMAudioGenerationStage
+    num_candidates: 3
+    sample_rate: 48000
+    seconds_total: 8.0
+
+  spatial_config:
+    enabled: true
+    class_path: sonoworld.stages.audio_spatialization.point_cluster_omni.PointClusterOmniSpatializationStage
+    area_num_points: 1000
+    point_num_points: 1
