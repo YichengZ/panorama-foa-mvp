@@ -25,7 +25,7 @@ Use `--resume` to continue a partially completed scene and `--force` to rerun co
 - [x] `06.02.2026` Released generation code
 - [ ] Environment setup instructions
 - [ ] SonoScene360 dataset
-- [ ] Inference code, evaluation tools, interactive viewer, and additional examples
+- [ ] Rendering code, evaluation tools, interactive viewer, and additional examples
 - [ ] Support for generation with open-source backbones, specifically HunyuanWorld 1.0 and LLaVA
 
 ## Installation
