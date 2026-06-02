@@ -43,7 +43,7 @@ If you find our work useful, please cite:
 ```
 
 ## Licence
-This project is released under the MIT Licence. See [LICENCE](LICENCE).
+This project is released under the MIT Licence. See [LICENSE](LICENSE).
 
 Third-party code included in this repository may be subject to its own license
 terms, as noted in the corresponding source files.
