@@ -33,6 +33,28 @@ python -m panorama_foa.cli generate \
   --audio-provider mock
 ```
 
+## Real API Commands
+
+Configure `.env` from `.env.example` and use:
+
+```bash
+python -m panorama_foa.cli generate \
+  --panorama ../test-inputs/panorama.jpg \
+  --output ../outputs/park_001 \
+  --duration 16 \
+  --audio-provider elevenlabs \
+  --yaw-offset 0
+```
+
+Render from an existing plan without VLM:
+
+```bash
+python -m panorama_foa.cli render \
+  --plan ../outputs/park_001/scene_plan.json \
+  --output ../outputs/park_001 \
+  --audio-provider elevenlabs
+```
+
 ## Outputs
 
 Each run writes `scene_plan.json`, `scene_foa.wav`, `scene_foa.metadata.json`, `panorama_analysis.jpg`, `raw_audio/`, and `stems/`.
@@ -49,3 +71,11 @@ This subproject lives inside the SonoWorld repository and is inspired by SonoWor
 pytest -q
 ```
 
+Tests use mock providers or mocked HTTP clients and must pass without OpenAI or ElevenLabs API keys.
+
+## Known Limits
+
+- Fixed listener position only.
+- No distance, occlusion, reflection, depth, point cloud, segmentation, or physical room model.
+- No player, Web UI, HRTF/HRIR, binaural preview, or realtime rendering.
+- VLM source positions are coarse normalized panorama coordinates intended for an editable first pass.
