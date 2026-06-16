@@ -3,8 +3,9 @@
 ## Branch
 
 ```bash
-git fetch origin
-git checkout feat/panorama-to-foa-mvp
+git clone https://github.com/YichengZ/panorama-foa-mvp.git
+cd panorama-foa-mvp
+git checkout main
 ```
 
 ## Local Scope

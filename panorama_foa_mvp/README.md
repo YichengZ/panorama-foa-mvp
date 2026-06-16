@@ -2,6 +2,9 @@
 
 This subproject converts a 2:1 equirectangular panorama into a static first-order Ambisonics WAV.
 
+The active development repository for this MVP is `https://github.com/YichengZ/panorama-foa-mvp`.
+SonoWorld is used as a reference repository and for its local MMAudio wrapper; this MVP should remain scoped to `panorama_foa_mvp/`.
+
 It is an MVP for a fixed listening point:
 
 - Input: one complete equirectangular panorama.
