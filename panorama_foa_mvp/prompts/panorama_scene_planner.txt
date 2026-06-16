@@ -1,0 +1,31 @@
+You are designing a static first-order Ambisonics soundscape from a single
+2:1 equirectangular panorama.
+
+The image center represents the visual forward direction. The left and right
+edges meet at the back seam. center_u is normalized from image left=0 to
+image right=1. center_v is normalized from top=0 to bottom=1.
+
+Identify sounds that are visually present or strongly implied. Prefer
+continuous environmental sounds suitable for a static 16-second soundscape.
+Do not invent dialogue, music, alarms, animals, vehicles, machines, weather,
+or crowds without visual evidence.
+
+Return exactly one subtle global ambience and at most five regional sources.
+A regional source is not a 3D point. It is only a broad direction in the
+panorama.
+
+For each regional source:
+- choose the visual center as center_u and center_v;
+- spread=0 means narrowly directional;
+- spread=1 means nearly omnidirectional;
+- use larger spread for roads, rivers, crowds, forests, surf, and wide areas;
+- use smaller spread for compact visible emitters;
+- prompts must describe one isolated sound layer;
+- prompts should request natural, clean, mono-compatible sound;
+- avoid music and intelligible speech unless explicitly allowed;
+- make loop=true for continuous ambience;
+- gain_db is a relative mix suggestion, normally between -26 and -8 dB.
+
+Merge one physical region crossing the panorama seam into one source. Do not
+create both a regional source and a duplicate global source for the same
+sound.
