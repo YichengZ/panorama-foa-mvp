@@ -34,4 +34,3 @@ def decode_to_mono_wav(input_path: Path, output_path: Path, *, ffmpeg_path: str 
         message = exc.stderr.strip() or exc.stdout.strip() or str(exc)
         raise RuntimeError(f"ffmpeg failed to decode {input_path}: {message}") from exc
     return output_path
-

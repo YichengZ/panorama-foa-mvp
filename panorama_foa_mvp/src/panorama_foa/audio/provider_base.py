@@ -14,4 +14,3 @@ class TextToAudioProvider(Protocol):
         output_path: Path,
     ) -> Path:
         ...
-

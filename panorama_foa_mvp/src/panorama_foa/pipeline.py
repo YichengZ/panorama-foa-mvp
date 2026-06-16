@@ -40,7 +40,10 @@ def validate_and_filter_plan(plan: ScenePlan, *, duration_seconds: float, max_so
         kept.append(source)
         if len(kept) >= max_sources:
             break
-    return plan.model_copy(update={"duration_seconds": duration_seconds, "regional_sources": kept})
+    data = plan.model_dump()
+    data["duration_seconds"] = duration_seconds
+    data["regional_sources"] = kept
+    return ScenePlan.model_validate(data)
 
 
 class PanoramaToFOAPipeline:
@@ -68,6 +71,7 @@ class PanoramaToFOAPipeline:
         allow_speech: bool = False,
         allow_music: bool = False,
     ) -> PipelineResult:
+        _validate_duration(duration_seconds)
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         analysis_path = output_dir / "panorama_analysis.jpg"
@@ -201,3 +205,8 @@ def build_mock_manual_pipeline(plan_path: Path, *, yaw_offset_deg: float = 0.0, 
         yaw_offset_deg=yaw_offset_deg,
         force=force,
     )
+
+
+def _validate_duration(duration_seconds: float) -> None:
+    if not 0.5 <= float(duration_seconds) <= 30.0:
+        raise ValueError("duration_seconds must be between 0.5 and 30.0 seconds")

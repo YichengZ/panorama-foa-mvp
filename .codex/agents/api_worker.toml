@@ -15,4 +15,3 @@ owned_paths = [
 must_use_openai_responses_api = true
 must_use_pydantic_structured_outputs = true
 must_not_log_api_keys = true
-

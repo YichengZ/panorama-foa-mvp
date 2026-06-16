@@ -33,4 +33,3 @@ def test_source_does_not_import_or_implement_forbidden_scope():
             text = path.read_text(errors="ignore")
             for token in FORBIDDEN:
                 assert token not in text, f"{token} found in {path}"
-

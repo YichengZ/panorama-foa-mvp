@@ -22,4 +22,3 @@ def panorama_fixture(fixtures_dir: Path) -> Path:
                 pixels[x, y] = (x % 256, y * 2 % 256, 128)
         image.save(path, quality=90)
     return path
-

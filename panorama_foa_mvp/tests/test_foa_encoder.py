@@ -45,4 +45,3 @@ def test_encode_global_ambience_is_w_only():
     assert encoded.shape == (8, 4)
     np.testing.assert_allclose(encoded[:, 0], mono)
     np.testing.assert_allclose(encoded[:, 1:], 0.0)
-

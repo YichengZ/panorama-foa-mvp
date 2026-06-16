@@ -64,4 +64,3 @@ def _fit_length(signal: np.ndarray, target_samples: int) -> np.ndarray:
             if count > 0:
                 tiled[start:end] *= ramp[:count]
     return tiled
-

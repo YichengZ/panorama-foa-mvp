@@ -14,4 +14,3 @@ must_cover = [
   "mock end-to-end with no paid API",
   "forbidden scope guard",
 ]
-

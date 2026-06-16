@@ -36,4 +36,3 @@ def test_exporter_writes_pcm24_four_channel_wav_and_metadata(tmp_path):
     assert metadata["coordinates"]["positive_azimuth"] == "left"
     assert metadata["coordinates"]["yaw_offset_deg"] == 15.0
     assert metadata["listener_model"]["translation_changes_audio"] is False
-

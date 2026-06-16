@@ -19,7 +19,7 @@ console = Console()
 def generate(
     panorama: Path = typer.Option(..., exists=True, readable=True),
     output: Path = typer.Option(...),
-    duration: float = typer.Option(16.0),
+    duration: float = typer.Option(16.0, min=0.5, max=30.0),
     planner: str = typer.Option("openai"),
     plan: Optional[Path] = typer.Option(None, exists=True, readable=True),
     audio_provider: str = typer.Option("elevenlabs"),
@@ -83,7 +83,7 @@ def render(
 def plan_command(
     panorama: Path = typer.Option(..., exists=True, readable=True),
     output: Path = typer.Option(...),
-    duration: float = typer.Option(16.0),
+    duration: float = typer.Option(16.0, min=0.5, max=30.0),
     max_sources: int = typer.Option(5),
     allow_speech: bool = typer.Option(False),
     allow_music: bool = typer.Option(False),

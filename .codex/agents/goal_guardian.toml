@@ -12,4 +12,3 @@ fail_conditions = [
   "tests use real paid APIs",
   "unresolved P0 or P1 findings remain",
 ]
-

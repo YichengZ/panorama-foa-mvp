@@ -29,4 +29,3 @@ def test_mix_foa_layers_rejects_mismatched_lengths():
     layer_b = np.ones((15, 4), dtype=np.float32)
     with pytest.raises(ValueError, match="same shape"):
         mix_foa_layers([layer_a, layer_b])
-

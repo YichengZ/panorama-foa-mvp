@@ -38,4 +38,3 @@ def test_mock_end_to_end_does_not_require_api_keys(
     )
 
     assert result.exit_code == 0, result.output
-

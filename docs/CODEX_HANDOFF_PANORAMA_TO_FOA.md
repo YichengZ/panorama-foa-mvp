@@ -1,7 +1,7 @@
 # Codex 工程交接：全景图生成四声道 Ambisonics（FOA）MVP
 
-> 文档日期：2026-06-16  
-> 参考仓库：`https://github.com/HuMathe/sonoworld`  
+> 文档日期：2026-06-16
+> 参考仓库：`https://github.com/HuMathe/sonoworld`
 > 目标：Codex clone SonoWorld 后，在不依赖 Marble、3DGS、深度、SAM3 的前提下，实现一套独立可运行的“全景图 → 四声道 Ambisonics WAV”工程。
 
 ---

@@ -22,4 +22,3 @@ Use this gate before declaring completion.
 ## Required Verdict
 
 Return `PASS` only when every mandatory check passes with evidence. Return `FAIL` for any missing evidence or failed mandatory item.
-

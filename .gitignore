@@ -19,7 +19,6 @@ env/
 .ruff_cache/
 .coverage
 htmlcov/
-*.egg-info/
 
 .DS_Store
 

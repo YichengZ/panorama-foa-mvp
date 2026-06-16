@@ -10,4 +10,3 @@ python -m panorama_foa.cli render \
   --output /tmp/panorama_foa_example \
   --audio-provider mock
 ```
-

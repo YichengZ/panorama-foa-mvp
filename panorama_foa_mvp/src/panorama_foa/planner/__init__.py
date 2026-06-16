@@ -1,2 +1,1 @@
 """Scene planning providers."""
-

@@ -20,4 +20,3 @@
 | A16 | yes | No Marble, SAM3, segmentation, 3DGS, depth, point clouds, HRTF, player, frontend, or true 6DoF. | scope guard |
 | A17 | yes | `pytest -q` passes. | final command |
 | A18 | yes | Final `goal_guardian`, `acceptance_tester`, `independent_reviewer`, and `/review` pass with no unresolved P0/P1. | release packets |
-

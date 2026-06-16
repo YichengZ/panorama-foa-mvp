@@ -18,4 +18,3 @@ class ScenePlanner(Protocol):
         allow_music: bool,
     ) -> ScenePlan:
         ...
-

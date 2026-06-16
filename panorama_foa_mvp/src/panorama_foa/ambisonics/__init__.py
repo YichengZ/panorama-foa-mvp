@@ -1,2 +1,1 @@
 """First-order Ambisonics helpers."""
-

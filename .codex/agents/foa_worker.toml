@@ -11,4 +11,3 @@ owned_paths = [
 must_preserve_channel_order = "[W,Y,Z,X]"
 must_use_acn_sn3d = true
 must_not_normalize_channels_independently = true
-

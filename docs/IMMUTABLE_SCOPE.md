@@ -22,4 +22,3 @@ This project adds one independent subproject, `panorama_foa_mvp/`, to the SonoWo
 - HRTF, HRIR, binaural playback, players, Web UI, Three.js, WebXR, mobile sources, video sync, or true 6DoF.
 
 Any implementation, dependency, README claim, test fixture, or code path that adds an out-of-scope item is a release-blocking failure.
-

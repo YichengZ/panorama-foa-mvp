@@ -22,4 +22,3 @@ require_acceptance_tests_before_production_code = true
 require_mock_tests_no_paid_api = true
 require_foa_acn_sn3d_order = true
 fail_on_p0_p1 = true
-

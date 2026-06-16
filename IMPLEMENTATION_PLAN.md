@@ -130,4 +130,3 @@ This command should return no forbidden implementation/dependency/claim matches 
 After integration, spawn `goal_guardian`, `acceptance_tester`, and `independent_reviewer` in parallel. Wait for all three before acting on results. Then run Codex `/review` on the integrated diff.
 
 FAIL if any mandatory acceptance item fails, any unresolved P0/P1 exists, FOA coordinates/order are wrong, tests make real paid API calls, or any forbidden scope appears.
-

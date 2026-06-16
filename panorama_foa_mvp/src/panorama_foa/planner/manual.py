@@ -21,5 +21,6 @@ class ManualPlanPlanner:
     ) -> ScenePlan:
         _ = (panorama_path, scene_description, max_sources, allow_speech, allow_music)
         plan = ScenePlan.model_validate_json(self.plan_path.read_text())
-        return plan.model_copy(update={"duration_seconds": duration_seconds})
-
+        data = plan.model_dump()
+        data["duration_seconds"] = duration_seconds
+        return ScenePlan.model_validate(data)

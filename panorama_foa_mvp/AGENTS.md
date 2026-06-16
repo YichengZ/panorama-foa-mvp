@@ -8,4 +8,3 @@
 - Keep input/output schemas backward compatible within `schema_version` 1.x.
 - Every change to coordinate conventions requires updating tests and metadata.
 - Treat `docs/IMMUTABLE_SCOPE.md` and `docs/ACCEPTANCE_MATRIX.md` as release gates.
-

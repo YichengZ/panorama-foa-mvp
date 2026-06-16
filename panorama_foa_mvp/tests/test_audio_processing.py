@@ -49,4 +49,3 @@ def test_process_mono_audio_pads_short_small_gap():
         source_id="short_source",
     )
     assert processed.shape == (48000,)
-

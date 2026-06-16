@@ -88,6 +88,66 @@ def test_mock_cli_end_to_end_outputs_contract_files(tmp_path, panorama_fixture, 
     assert plan["duration_seconds"] == 1.0
 
 
+def test_mock_cli_rejects_schema_invalid_duration_before_artifacts(
+    tmp_path,
+    panorama_fixture,
+    fixtures_dir,
+):
+    output = tmp_path / "scene"
+    result = CliRunner().invoke(
+        app,
+        [
+            "generate",
+            "--panorama",
+            str(panorama_fixture),
+            "--output",
+            str(output),
+            "--planner",
+            "manual",
+            "--plan",
+            str(fixtures_dir / "manual_plan.json"),
+            "--audio-provider",
+            "mock",
+            "--duration",
+            "0.1",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert not (output / "scene_plan.json").exists()
+    assert not (output / "scene_foa.wav").exists()
+
+
+def test_mock_cli_rejects_duration_over_schema_max(
+    tmp_path,
+    panorama_fixture,
+    fixtures_dir,
+):
+    output = tmp_path / "scene"
+    result = CliRunner().invoke(
+        app,
+        [
+            "generate",
+            "--panorama",
+            str(panorama_fixture),
+            "--output",
+            str(output),
+            "--planner",
+            "manual",
+            "--plan",
+            str(fixtures_dir / "manual_plan.json"),
+            "--audio-provider",
+            "mock",
+            "--duration",
+            "31",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert not (output / "scene_plan.json").exists()
+    assert not (output / "scene_foa.wav").exists()
+
+
 def test_pipeline_decodes_non_wav_raw_audio(monkeypatch, tmp_path, panorama_fixture, fixtures_dir):
     from panorama_foa.audio.mock import MockTextToAudioProvider
     from panorama_foa.pipeline import build_mock_manual_pipeline

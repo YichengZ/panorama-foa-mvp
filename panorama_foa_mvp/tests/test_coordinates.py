@@ -27,4 +27,3 @@ def test_yaw_offset_wraps_to_half_open_range():
     assert azimuth == pytest.approx(-150.0)
     assert elevation == pytest.approx(0.0)
     assert -180.0 <= azimuth < 180.0
-
