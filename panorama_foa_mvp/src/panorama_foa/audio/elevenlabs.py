@@ -40,6 +40,7 @@ class ElevenLabsSoundEffectsProvider:
     """Generate raw sound layers with ElevenLabs Sound Effects API."""
 
     raw_extension = ".mp3"
+    sample_rate = None
 
     def __init__(
         self,

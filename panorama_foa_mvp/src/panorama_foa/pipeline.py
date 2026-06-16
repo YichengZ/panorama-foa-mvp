@@ -4,6 +4,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import soundfile as sf
 
 from panorama_foa.ambisonics.exporter import export_foa_wav, write_metadata
@@ -150,7 +151,7 @@ class PanoramaToFOAPipeline:
         duration_seconds: float,
         raw_path: Path,
         stem_path: Path,
-    ):
+    ) -> np.ndarray:
         if self.force or not raw_path.exists():
             self.audio_provider.generate(
                 prompt=prompt,

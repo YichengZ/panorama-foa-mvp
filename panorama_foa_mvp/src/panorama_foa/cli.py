@@ -6,25 +6,17 @@ from typing import Optional
 import typer
 from rich.console import Console
 
-from panorama_foa.audio.mock import MockTextToAudioProvider
-from panorama_foa.pipeline import PanoramaToFOAPipeline, build_mock_manual_pipeline
-from panorama_foa.planner.manual import ManualPlanPlanner
+from panorama_foa.factory import (
+    AUDIO_PROVIDER_MMAUDIO,
+    PLANNER_OPENAI,
+    FactoryConfigurationError,
+    build_pipeline,
+    build_planner,
+)
 from panorama_foa.schemas import ScenePlan
 
 app = typer.Typer(no_args_is_help=True)
 console = Console()
-
-PLANNER_OPENAI = "openai"
-PLANNER_MANUAL = "manual"
-SUPPORTED_PLANNERS = {PLANNER_OPENAI, PLANNER_MANUAL}
-AUDIO_PROVIDER_ELEVENLABS = "elevenlabs"
-AUDIO_PROVIDER_MOCK = "mock"
-AUDIO_PROVIDER_MMAUDIO = "mmaudio"
-SUPPORTED_AUDIO_PROVIDERS = {
-    AUDIO_PROVIDER_ELEVENLABS,
-    AUDIO_PROVIDER_MMAUDIO,
-    AUDIO_PROVIDER_MOCK,
-}
 
 
 @app.command()
@@ -42,7 +34,7 @@ def generate(
     scene_description: Optional[str] = typer.Option(None),
     force: bool = typer.Option(False),
 ) -> None:
-    pipeline = _build_pipeline(
+    pipeline = _build_cli_pipeline(
         planner_name=planner,
         plan_path=plan,
         audio_provider_name=audio_provider,
@@ -70,7 +62,7 @@ def render(
     force: bool = typer.Option(False),
 ) -> None:
     panorama_placeholder = output / "panorama_analysis.jpg"
-    pipeline = _build_pipeline(
+    pipeline = _build_cli_pipeline(
         planner_name="manual",
         plan_path=plan,
         audio_provider_name=audio_provider,
@@ -102,16 +94,9 @@ def plan_command(
     scene_description: Optional[str] = typer.Option(None),
 ) -> None:
     try:
-        from panorama_foa.config import Settings
-        from panorama_foa.planner.openai_vlm import OpenAIVLMScenePlanner
-
-        settings = Settings.from_env(require_openai=True)
-        planner = OpenAIVLMScenePlanner(
-            api_key=settings.openai_api_key,
-            model=settings.openai_vision_model,
-        )
-    except Exception as exc:
-        raise typer.BadParameter(f"OpenAI planner is not configured: {exc}") from exc
+        planner = build_planner(planner_name=PLANNER_OPENAI, plan_path=None)
+    except FactoryConfigurationError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
     plan = planner.plan(
         panorama_path=panorama,
@@ -126,72 +111,24 @@ def plan_command(
     console.print(str(output))
 
 
-def _build_pipeline(
+def _build_cli_pipeline(
     *,
     planner_name: str,
     plan_path: Path | None,
     audio_provider_name: str,
     yaw_offset: float,
     force: bool,
-) -> PanoramaToFOAPipeline:
-    planner_name = planner_name.strip().lower()
-    audio_provider_name = audio_provider_name.strip().lower()
-
-    if planner_name not in SUPPORTED_PLANNERS:
-        raise typer.BadParameter(
-            f"unknown planner: {planner_name}. "
-            f"Expected one of: {', '.join(sorted(SUPPORTED_PLANNERS))}"
+):
+    try:
+        return build_pipeline(
+            planner_name=planner_name,
+            plan_path=plan_path,
+            audio_provider_name=audio_provider_name,
+            yaw_offset=yaw_offset,
+            force=force,
         )
-    if audio_provider_name not in SUPPORTED_AUDIO_PROVIDERS:
-        raise typer.BadParameter(
-            f"unknown audio provider: {audio_provider_name}. "
-            f"Expected one of: {', '.join(sorted(SUPPORTED_AUDIO_PROVIDERS))}"
-        )
-
-    if planner_name == PLANNER_OPENAI:
-        try:
-            from panorama_foa.config import Settings
-            from panorama_foa.planner.openai_vlm import OpenAIVLMScenePlanner
-
-            settings = Settings.from_env(require_openai=True)
-            planner = OpenAIVLMScenePlanner(
-                api_key=settings.openai_api_key,
-                model=settings.openai_vision_model,
-            )
-        except Exception as exc:
-            raise typer.BadParameter(f"OpenAI planner is not configured: {exc}") from exc
-    else:
-        if plan_path is None:
-            raise typer.BadParameter("--plan is required when --planner manual")
-        planner = ManualPlanPlanner(plan_path)
-
-    if audio_provider_name == AUDIO_PROVIDER_MOCK:
-        provider = MockTextToAudioProvider()
-    elif audio_provider_name == AUDIO_PROVIDER_MMAUDIO:
-        try:
-            from panorama_foa.audio.mmaudio import MMAudioTextToAudioProvider
-            from panorama_foa.config import Settings
-
-            settings = Settings.from_env()
-            provider = MMAudioTextToAudioProvider(settings=settings)
-        except Exception as exc:
-            raise typer.BadParameter(f"MMAudio provider is not configured: {exc}") from exc
-    else:
-        try:
-            from panorama_foa.audio.elevenlabs import ElevenLabsSoundEffectsProvider
-            from panorama_foa.config import Settings
-
-            settings = Settings.from_env()
-            provider = ElevenLabsSoundEffectsProvider(settings=settings)
-        except Exception as exc:
-            raise typer.BadParameter(f"ElevenLabs provider is not configured: {exc}") from exc
-
-    return PanoramaToFOAPipeline(
-        planner=planner,
-        audio_provider=provider,
-        yaw_offset_deg=yaw_offset,
-        force=force,
-    )
+    except FactoryConfigurationError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 if __name__ == "__main__":

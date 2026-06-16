@@ -5,6 +5,9 @@ from typing import Protocol
 
 
 class TextToAudioProvider(Protocol):
+    raw_extension: str
+    sample_rate: int | None
+
     def generate(
         self,
         *,
