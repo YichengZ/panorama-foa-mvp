@@ -1,86 +1,70 @@
-# SonoWorld: From One Image to a 3D Audio-Visual Scene (CVPR 2026)
+# Panorama FOA MVP
 
-> Official implementation of the CVPR 2026 paper _"SonoWorld: From One Image to a 3D Audio-Visual Scene."_
-> 
+This repository is the active development home for the Panorama to first-order
+Ambisonics MVP:
 
-**TL;DR** Given a single input image, SonoWorld generates a 3D audio-visual scene with spatialized sound and scene-level assets.
+```text
+2:1 equirectangular panorama
+-> static scene plan
+-> mono-compatible text-to-audio stems
+-> deterministic FOA AmbiX encoding
+-> 4-channel 48 kHz PCM_24 WAV, ACN/SN3D [W,Y,Z,X]
+```
 
-Dataset and full setup instructions are coming soon.
+The canonical repository is:
 
+```text
+https://github.com/YichengZ/panorama-foa-mvp
+```
+
+SonoWorld is used as a reference codebase and for its local MMAudio wrapper.
+This MVP must remain scoped to `panorama_foa_mvp/` and must not enable
+SonoWorld's SAM3, Marble, segmentation, depth, point-cloud, 3DGS, player,
+frontend, HRTF, or true 6DoF stages.
 
 ## Quick Start
-After installing the required dependencies and preparing any model credentials/checkpoints needed by the selected stages, run:
 
 ```bash
-python generate.py \
-    --scene_root outputs/example_scene \
-    --config configs/default.yaml \
-    --input_image test-inputs/fall.jpg
+cd panorama_foa_mvp
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+python -m pip install -e ".[test]"
+pytest -q
 ```
 
-Use `--resume` to continue a partially completed scene and `--force` to rerun completed stages.
+Offline mock end-to-end:
 
-## News and Planned TODOs
-
-- [x] `06.02.2026` Released generation code
-- [ ] Environment setup instructions
-- [ ] SonoScene360 dataset
-- [ ] Rendering code, evaluation tools, interactive viewer, and additional examples
-- [ ] Support for generation with open-source backbones, specifically HunyuanWorld 1.0 and LLaVA
-
-## Installation
-
-We tested SonoWorld on an NVIDIA A6000 with GCC 14.2.0, CUDA 12.4.1, and Python 3.12.
-
-Clone the repository and create the environment:
 ```bash
-git clone --branch main --single-branch git@github.com:HuMathe/sonoworld.git
-cd sonoworld
-conda create -n sonoworld python=3.12
-conda activate sonoworld
+python -m panorama_foa.cli generate \
+  --panorama tests/fixtures/panorama_2x1.jpg \
+  --output /tmp/panorama_foa_mock \
+  --planner manual \
+  --plan tests/fixtures/manual_plan.json \
+  --audio-provider mock \
+  --duration 1 \
+  --force
 ```
 
-Install PyTorch
+Server-side local MMAudio smoke test:
+
 ```bash
-pip install torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0 --index-url https://download.pytorch.org/whl/cu128
+python -m panorama_foa.cli generate \
+  --panorama assets/panoramas/starship_captain_private_quarters.png \
+  --output /tmp/panorama_foa_starship_mmaudio \
+  --planner manual \
+  --plan examples/starship_captain_private_quarters_plan.json \
+  --audio-provider mmaudio \
+  --duration 15 \
+  --yaw-offset 0 \
+  --force
 ```
 
-Install [SAM3](https://github.com/facebookresearch/sam3), [MMAudio](https://github.com/hkchengrex/MMAudio), [GeoCalib](https://github.com/cvg/GeoCalib), and [MoGe](https://github.com/microsoft/MoGe):
-```bash
-mkdir -p third_party
+## Handoff
 
-git clone https://github.com/facebookresearch/sam3.git third_party/sam3
-git -C third_party/sam3 checkout 757bbb0206a0b68bee81b17d7eb4877177025b2f
-pip install -e third_party/sam3
+For server setup and validation, read:
 
-git clone https://github.com/hkchengrex/MMAudio.git third_party/MMAudio
-pip install -e third_party/MMAudio
-
-git clone https://github.com/cvg/GeoCalib.git third_party/GeoCalib
-pip install -e third_party/GeoCalib
-
-pip install git+https://github.com/microsoft/MoGe.git
-```
-
-Install the remaining dependencies:
-```bash
-pip install -r requirements.txt
-pip install --force-reinstall "setuptools<82"
-```
-
-## Citation
-If you find our work useful, please cite:
-```
-@article{jin2026sonoworld,
-    title={SonoWorld: From One Image to a 3D Audio-Visual Scene},
-    author={Jin, Derong and Chen, Xiyi and Lin, Ming C. and Gao, Ruohan},
-    booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-    year={2026}
-}
-```
-
-## Licence
-This project is released under the MIT Licence. See [LICENSE](LICENSE).
-
-Third-party code included in this repository may be subject to its own license
-terms, as noted in the corresponding source files.
+- `docs/SERVER_HANDOFF_MMAUDIO.md`
+- `docs/MMAUDIO_LOCAL_BACKEND.md`
+- `docs/IMMUTABLE_SCOPE.md`
+- `panorama_foa_mvp/README.md`

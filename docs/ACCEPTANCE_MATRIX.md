@@ -6,7 +6,7 @@
 | A02 | yes | Input panorama aspect ratio is checked as approximately 2:1. | unit test |
 | A03 | yes | Manual plan can skip VLM. | mock E2E test |
 | A04 | yes | OpenAI planner uses Responses API image input and Pydantic structured output. | code review, mocked test |
-| A05 | yes | ElevenLabs provider generates one raw layer per source with retries and no key logging. | code review, mocked HTTP test |
+| A05 | yes | Optional ElevenLabs fallback generates one raw layer per source with retries and no key logging when explicitly selected. | code review, mocked HTTP test |
 | A06 | yes | Tests never call paid APIs and pass without API keys. | network guard test |
 | A07 | yes | Mono stems are 48 kHz, exact duration, DC removed, and normalized before `gain_db`. | audio processing test |
 | A08 | yes | Coordinate mapping returns front 0, left +90, right -90, up +90 elevation. | coordinate test |

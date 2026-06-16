@@ -93,7 +93,10 @@ python -m panorama_foa.cli generate \
   --force
 ```
 
-## Optional ElevenLabs API Commands
+## Optional Paid API Commands
+
+Server handoff does not use paid APIs. These commands are only for later
+manual experiments when explicitly requested.
 
 Configure `.env` from `.env.example` and use:
 
@@ -123,7 +126,7 @@ The WAV header alone does not fully describe Ambisonics semantics, so always kee
 
 ## Attribution
 
-This subproject lives inside the SonoWorld repository and is inspired by SonoWorld's image understanding and layered audio-generation structure, but it is independent from the upstream CUDA, 3D, segmentation, rendering, and viewer stages.
+This MVP is inspired by SonoWorld's image understanding and layered audio-generation structure, and uses SonoWorld's local MMAudio wrapper when available. It is independent from the upstream CUDA, 3D, segmentation, rendering, and viewer stages.
 
 ## Tests
 

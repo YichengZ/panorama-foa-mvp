@@ -6,11 +6,18 @@
 git clone https://github.com/YichengZ/panorama-foa-mvp.git
 cd panorama-foa-mvp
 git checkout main
+git rev-parse HEAD
 ```
+
+Expected handoff baseline: the latest pushed `main` commit from the personal
+repo. If this document was updated, trust `main` over any older commit SHA in
+chat history.
 
 ## Local Scope
 
 The server should run only the `panorama_foa_mvp/` subproject.
+
+Do not call OpenAI, ElevenLabs, or any paid API during server validation.
 
 Do not enable SonoWorld's SAM3, Marble, segmentation, depth, point-cloud,
 3DGS, player, frontend, HRTF, or true 6DoF stages.
@@ -21,10 +28,24 @@ Use Python 3.11+ or 3.12, ffmpeg, CUDA/PyTorch compatible with the NVIDIA
 driver, and the MMAudio dependencies required by SonoWorld's
 `sonoworld.models.audio_diffusion.mmaudio.MMAudioDiffusion` wrapper.
 
+Collect and report:
+
+```bash
+nvidia-smi
+python --version
+nvcc --version || true
+df -h
+free -h
+```
+
 Configure:
 
 ```bash
 cd panorama_foa_mvp
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+python -m pip install -e ".[test]"
 cp .env.example .env
 ```
 
@@ -87,3 +108,42 @@ Expected files:
 
 The final WAV must remain 4-channel, 48 kHz, `PCM_24`, AmbiX / ACN / SN3D,
 with channel labels `[W,Y,Z,X]`.
+
+Independent WAV/metadata readback:
+
+```bash
+python - <<'PY'
+import json
+import soundfile as sf
+from pathlib import Path
+
+out = Path("/tmp/panorama_foa_starship_mmaudio")
+info = sf.info(out / "scene_foa.wav")
+meta = json.loads((out / "scene_foa.metadata.json").read_text())
+
+result = {
+    "samplerate": info.samplerate,
+    "channels": info.channels,
+    "frames": info.frames,
+    "subtype": info.subtype,
+    "convention": meta["ambisonics"]["convention"],
+    "channel_ordering": meta["ambisonics"]["channel_ordering"],
+    "normalization": meta["ambisonics"]["normalization"],
+    "channel_labels": meta["ambisonics"]["channel_labels"],
+}
+print(result)
+
+assert result["samplerate"] == 48000
+assert result["channels"] == 4
+assert result["frames"] == 720000
+assert result["subtype"] == "PCM_24"
+assert result["convention"] == "AmbiX"
+assert result["channel_ordering"] == "ACN"
+assert result["normalization"] == "SN3D"
+assert result["channel_labels"] == ["W", "Y", "Z", "X"]
+PY
+```
+
+Final report must include the commit SHA, GPU/CUDA/Python environment, install
+steps, `pytest -q` result, mock E2E result, real MMAudio result, output path,
+WAV readback, and a clear statement that no paid API was called.

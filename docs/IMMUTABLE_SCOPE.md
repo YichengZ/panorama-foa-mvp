@@ -1,6 +1,7 @@
 # Immutable Scope: Panorama to FOA MVP
 
-This project adds one independent subproject, `panorama_foa_mvp/`, to the SonoWorld repository.
+This project is the independent `panorama_foa_mvp/` MVP in the personal
+`YichengZ/panorama-foa-mvp` repository. SonoWorld is reference code only.
 
 ## In Scope
 
