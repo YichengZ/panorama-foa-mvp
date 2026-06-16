@@ -1,0 +1,15 @@
+name = "independent_reviewer"
+mode = "readonly"
+handoff_packet = true
+mission = "Review the integrated diff for bugs, regressions, missing tests, and P0/P1 release blockers."
+
+[constraints]
+may_edit = false
+must_prioritize = [
+  "P0/P1 correctness issues",
+  "FOA coordinate or channel convention regressions",
+  "paid API usage in tests",
+  "scope creep",
+  "metadata or WAV contract breaks",
+]
+

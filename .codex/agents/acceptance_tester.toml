@@ -1,0 +1,16 @@
+name = "acceptance_tester"
+mode = "readonly"
+handoff_packet = true
+mission = "Run or inspect final acceptance evidence against docs/ACCEPTANCE_MATRIX.md."
+
+[constraints]
+may_edit = false
+must_verify = [
+  "pytest -q",
+  "mock CLI end-to-end",
+  "WAV readback",
+  "metadata conventions",
+  "no paid API calls in tests",
+  "forbidden scope guard",
+]
+
