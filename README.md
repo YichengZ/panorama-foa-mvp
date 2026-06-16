@@ -29,7 +29,44 @@ Use `--resume` to continue a partially completed scene and `--force` to rerun co
 - [ ] Support for generation with open-source backbones, specifically HunyuanWorld 1.0 and LLaVA
 
 ## Installation
-Coming soon.
+
+We tested SonoWorld on an NVIDIA A6000 with GCC 14.2.0, CUDA 12.4.1, and Python 3.12.
+
+Clone the repository and create the environment:
+```bash
+git clone --branch main --single-branch git@github.com:HuMathe/sonoworld.git
+cd sonoworld
+conda create -n sonoworld python=3.12
+conda activate sonoworld
+```
+
+Install PyTorch
+```bash
+pip install torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0 --index-url https://download.pytorch.org/whl/cu128
+```
+
+Install [SAM3](https://github.com/facebookresearch/sam3), [MMAudio](https://github.com/hkchengrex/MMAudio), [GeoCalib](https://github.com/cvg/GeoCalib), and [MoGe](https://github.com/microsoft/MoGe):
+```bash
+mkdir -p third_party
+
+git clone https://github.com/facebookresearch/sam3.git third_party/sam3
+git -C third_party/sam3 checkout 757bbb0206a0b68bee81b17d7eb4877177025b2f
+pip install -e third_party/sam3
+
+git clone https://github.com/hkchengrex/MMAudio.git third_party/MMAudio
+pip install -e third_party/MMAudio
+
+git clone https://github.com/cvg/GeoCalib.git third_party/GeoCalib
+pip install -e third_party/GeoCalib
+
+pip install git+https://github.com/microsoft/MoGe.git
+```
+
+Install the remaining dependencies:
+```bash
+pip install -r requirements.txt
+pip install --force-reinstall "setuptools<82"
+```
 
 ## Citation
 If you find our work useful, please cite:

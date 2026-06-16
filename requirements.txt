@@ -1,0 +1,10 @@
+xformers==0.0.34
+sentencepiece>=0.2.0
+peft>=0.7.1
+einops @ git+https://github.com/arogozhnikov/einops.git@b131c819a33435b83b0ef84cd2f8f03f5658918f
+nunchaku @ https://github.com/nunchaku-ai/nunchaku/releases/download/v1.2.1/nunchaku-1.2.1+cu12.8torch2.10-cp312-cp312-linux_x86_64.whl
+openai
+gsplat==1.5.3
+plyfile==1.1.2
+pycocotools==2.0.8
+decord==0.6.0
