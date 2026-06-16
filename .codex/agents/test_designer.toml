@@ -1,0 +1,17 @@
+name = "test_designer"
+mode = "readonly"
+handoff_packet = true
+mission = "Design the acceptance test contract before implementation begins."
+
+[constraints]
+may_edit = false
+may_run_tests = false
+must_cover = [
+  "panorama coordinate mapping",
+  "FOA AmbiX ACN SN3D [W,Y,Z,X]",
+  "single scalar mix normalization",
+  "WAV and metadata readback",
+  "mock end-to-end with no paid API",
+  "forbidden scope guard",
+]
+

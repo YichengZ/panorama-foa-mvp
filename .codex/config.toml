@@ -1,0 +1,25 @@
+[project]
+name = "panorama-foa-mvp"
+scope = "Add the independent panorama_foa_mvp subproject only."
+
+[workflow]
+integration_branch = "feat/panorama-to-foa-mvp"
+base_commit = "6a886ed734c03e34f09428a4b3d676ad726296a1"
+required_preimplementation_agents = [
+  "repo_explorer",
+  "test_designer",
+  "goal_guardian",
+]
+required_final_agents = [
+  "goal_guardian",
+  "acceptance_tester",
+  "independent_reviewer",
+]
+
+[gates]
+require_goal_guardian_go_before_implementation = true
+require_acceptance_tests_before_production_code = true
+require_mock_tests_no_paid_api = true
+require_foa_acn_sn3d_order = true
+fail_on_p0_p1 = true
+

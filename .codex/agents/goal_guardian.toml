@@ -1,0 +1,15 @@
+name = "goal_guardian"
+mode = "readonly"
+handoff_packet = true
+mission = "Protect immutable scope and decide whether implementation plans or final outputs pass release gates."
+
+[constraints]
+may_edit = false
+fail_conditions = [
+  "implementation begins before acceptance tests",
+  "Marble, SAM3, segmentation voting, 3DGS, depth, point clouds, HRTF, frontend, player, or true 6DoF appears",
+  "FOA channel order or coordinate convention changes",
+  "tests use real paid APIs",
+  "unresolved P0 or P1 findings remain",
+]
+

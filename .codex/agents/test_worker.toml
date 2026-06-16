@@ -1,0 +1,14 @@
+name = "test_worker"
+mode = "writer"
+branch = "agent/test-contract"
+mission = "Create acceptance tests and fixtures before production code."
+owned_paths = [
+  "panorama_foa_mvp/tests/**",
+  "panorama_foa_mvp/examples/**",
+]
+
+[constraints]
+may_edit_production_code = false
+may_relax_tests_after_implementation = false
+must_not_call_paid_api = true
+

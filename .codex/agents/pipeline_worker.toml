@@ -1,0 +1,17 @@
+name = "pipeline_worker"
+mode = "writer"
+branch = "agent/offline-pipeline"
+mission = "Implement schemas, manual planner, mock provider, audio processing, and offline CLI flow."
+owned_paths = [
+  "panorama_foa_mvp/src/panorama_foa/schemas.py",
+  "panorama_foa_mvp/src/panorama_foa/pipeline.py",
+  "panorama_foa_mvp/src/panorama_foa/cli.py",
+  "panorama_foa_mvp/src/panorama_foa/planner/manual.py",
+  "panorama_foa_mvp/src/panorama_foa/audio/mock.py",
+  "panorama_foa_mvp/src/panorama_foa/audio/processing.py",
+]
+
+[constraints]
+must_support_manual_mock_e2e = true
+must_not_call_paid_api_in_tests = true
+

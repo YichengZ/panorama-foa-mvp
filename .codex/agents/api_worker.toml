@@ -1,0 +1,18 @@
+name = "api_worker"
+mode = "writer"
+branch = "agent/api-providers"
+mission = "Implement OpenAI VLM planner, ElevenLabs provider, prompts, and config."
+owned_paths = [
+  "panorama_foa_mvp/src/panorama_foa/config.py",
+  "panorama_foa_mvp/src/panorama_foa/image_utils.py",
+  "panorama_foa_mvp/src/panorama_foa/planner/openai_vlm.py",
+  "panorama_foa_mvp/src/panorama_foa/audio/elevenlabs.py",
+  "panorama_foa_mvp/prompts/**",
+  "panorama_foa_mvp/.env.example",
+]
+
+[constraints]
+must_use_openai_responses_api = true
+must_use_pydantic_structured_outputs = true
+must_not_log_api_keys = true
+

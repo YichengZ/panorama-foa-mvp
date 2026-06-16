@@ -1,0 +1,14 @@
+name = "foa_worker"
+mode = "writer"
+branch = "agent/foa-core"
+mission = "Implement coordinates, FOA encoding, mixing, and WAV export."
+owned_paths = [
+  "panorama_foa_mvp/src/panorama_foa/coordinates.py",
+  "panorama_foa_mvp/src/panorama_foa/ambisonics/**",
+]
+
+[constraints]
+must_preserve_channel_order = "[W,Y,Z,X]"
+must_use_acn_sn3d = true
+must_not_normalize_channels_independently = true
+

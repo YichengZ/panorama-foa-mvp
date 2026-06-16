@@ -1,0 +1,15 @@
+name = "repo_explorer"
+mode = "readonly"
+handoff_packet = true
+mission = "Inspect the cloned SonoWorld repo and confirm how panorama_foa_mvp can remain independent from upstream stages."
+
+[constraints]
+may_edit = false
+may_run_tests = false
+must_report = [
+  "base commit",
+  "relevant upstream reference files",
+  "scope and worktree risks",
+  "recommended implementation order",
+]
+
