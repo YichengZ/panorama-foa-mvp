@@ -11,6 +11,21 @@ It is an MVP for a fixed listening point:
 
 It is not true 6DoF audio. Listener translation does not change audio. This project does not implement a player, binaural preview, physical acoustics, distance estimation, or pixel-level source localization.
 
+## Backend Direction
+
+The preferred production audio backend is local MMAudio inference. ElevenLabs is implemented as an optional API fallback, but it is not the target backend when a local GPU server is available.
+
+The current implementation supports:
+
+- `--audio-provider mock` for offline tests and deterministic development.
+- `--audio-provider elevenlabs` for optional paid API generation.
+
+Planned next backend:
+
+- `--audio-provider mmaudio` using a local MMAudio installation to generate mono-compatible stems that are then post-processed and encoded by this project into FOA.
+
+MMAudio integration must stay inside this subproject's provider interface. It must not enable or depend on SonoWorld's SAM3, Marble, segmentation, depth, point-cloud, player, frontend, or true 6DoF stages.
+
 ## Install
 
 Use Python 3.11 or newer and install `ffmpeg`.
@@ -33,7 +48,25 @@ python -m panorama_foa.cli generate \
   --audio-provider mock
 ```
 
-## Real API Commands
+## Local MMAudio Deployment Target
+
+An 8x NVIDIA RTX 4090 server is sufficient for MMAudio inference. A single 4090 should be enough for one 15-second stem; the full 8-GPU server can later be used to parallelize independent stems or jobs.
+
+Recommended server baseline:
+
+```text
+GPU: NVIDIA RTX 4090 24GB, one or more
+CPU: 16+ cores
+RAM: 64GB+
+Disk: 100GB+ free NVMe for environments, model weights, and outputs
+OS: Ubuntu 22.04 LTS or newer
+Python: 3.12
+CUDA/PyTorch: match the installed NVIDIA driver; SonoWorld was tested with CUDA 12.4.1
+```
+
+For the MVP scene size, assume at most six generated stems: one global ambience plus up to five regional sources. Generation can be sequential on one GPU first, then parallelized after quality and stability are confirmed.
+
+## Optional ElevenLabs API Commands
 
 Configure `.env` from `.env.example` and use:
 

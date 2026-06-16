@@ -1,0 +1,121 @@
+# MMAudio Local Backend Plan
+
+## Decision
+
+Use local MMAudio inference as the preferred real text-to-audio backend for
+`panorama_foa_mvp`. ElevenLabs remains available as an optional API fallback,
+but the target production path is local model inference on the user's GPU
+server.
+
+## Available Server
+
+The reported server class is 8x NVIDIA RTX 4090. This is sufficient for
+MMAudio inference.
+
+Recommended initial use:
+
+- Start with one GPU and one generated stem at a time.
+- Use 15-second stems.
+- Keep `num_candidates=1` for the MVP.
+- After quality is validated, parallelize independent stems across GPUs.
+
+## Resource Baseline
+
+Minimum practical inference host:
+
+```text
+GPU: NVIDIA GPU with 12GB+ VRAM
+CPU: 8+ cores
+RAM: 32GB+
+Disk: 60GB+ free
+OS: Ubuntu 22.04/24.04
+Python: 3.12
+CUDA: CUDA 12.x compatible driver and PyTorch build
+```
+
+Recommended host:
+
+```text
+GPU: RTX 4090 24GB or better
+CPU: 16+ cores
+RAM: 64GB+
+Disk: 100GB+ NVMe free
+OS: Ubuntu 22.04 LTS
+Python: 3.12
+```
+
+For an 8x4090 host, memory is not the limiting factor for one 15-second stem.
+The main engineering concern is environment correctness and scheduling.
+
+## Model And Dependency Notes
+
+SonoWorld's upstream default audio stage uses MMAudio:
+
+```yaml
+audio_generation:
+  class_path: sonoworld.stages.audio_generation.mmaudio.MMAudioGenerationStage
+  num_candidates: 3
+  sample_rate: 48000
+  seconds_total: 8.0
+```
+
+The local backend for `panorama_foa_mvp` should use MMAudio through the
+provider interface instead of enabling the upstream SonoWorld generation
+pipeline.
+
+Expected MMAudio settings for this MVP:
+
+```text
+model_variant: large_44k_v2
+seconds_total: 15.0
+steps: 25
+guidance_scale: 7.5
+num_candidates: 1
+sample_rate: 48000 after post-processing
+```
+
+Prefer reduced precision for inference if the upstream MMAudio package supports
+it reliably on the server. Keep full precision as a fallback.
+
+## Required Integration Work
+
+Add a new provider in `panorama_foa_mvp`:
+
+```text
+--audio-provider mmaudio
+```
+
+The provider must:
+
+- Implement `TextToAudioProvider.generate(...)`.
+- Generate one mono-compatible raw stem per requested prompt.
+- Avoid network calls during tests.
+- Reuse the existing post-processing path: fold to mono, resample to 48 kHz,
+  remove DC, fit exact duration, check silence, apply gain.
+- Preserve the existing FOA encoder, mixer, WAV exporter, and metadata.
+- Be covered by tests using a fake local MMAudio adapter.
+
+## Explicitly Not Required
+
+Do not enable these upstream SonoWorld stages for this MVP:
+
+- SAM3 or any segmentation.
+- Marble or any visual scene generation.
+- Depth, point clouds, 3DGS, or 3D source coordinates.
+- HRTF, player, frontend, WebXR, or true 6DoF.
+- Original SonoWorld spatialization stages.
+
+## Deployment Check Command
+
+Before implementing the provider, collect:
+
+```bash
+nvidia-smi
+python --version
+nvcc --version || true
+df -h
+free -h
+```
+
+Then install and smoke-test MMAudio independently before wiring it into the
+FOA pipeline.
