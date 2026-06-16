@@ -52,15 +52,8 @@ def build_stage_from_config(stage_name: str, stage_cfg: dict) -> Stage:
             f"{class_path}"
         )
 
-    init_kwargs = stage_cfg.get("init", {})
-
-    if init_kwargs is None:
-        init_kwargs = {}
-
-    if not isinstance(init_kwargs, dict):
-        raise TypeError(
-            f"'init' for stage '{stage_name}' must be a dictionary."
-        )
+    _RESERVED_KEYS = {"class_path", "enabled"}
+    init_kwargs = {k: v for k, v in stage_cfg.items() if k not in _RESERVED_KEYS}
 
     stage = cls(**init_kwargs)
 

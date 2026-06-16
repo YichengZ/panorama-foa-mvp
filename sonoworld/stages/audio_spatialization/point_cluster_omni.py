@@ -37,6 +37,7 @@ class PointClusterOmniSpatializationStage(Stage):
         include_background: bool = False,
         selection_strategy: str = "random",
         seed: Optional[int] = None,
+        **kwargs: Any,
     ) -> None:
         self.area_num_points = int(area_num_points)
         self.point_num_points = int(point_num_points)

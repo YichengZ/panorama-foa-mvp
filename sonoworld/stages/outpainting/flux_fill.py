@@ -46,6 +46,8 @@ class FluxOutpaintingStage(Stage):
         blend_extend: int = 6,
         enable_cpu_offload: bool = True,
         enable_vae_tiling: bool = True,
+        prompt: str = DEFAULT_PROMPT,
+        **kwargs: Any,
     ) -> None:
         self.model_id = model_id
         self.lora_repo_id = lora_repo_id
@@ -61,6 +63,7 @@ class FluxOutpaintingStage(Stage):
         self.enable_vae_tiling = enable_vae_tiling
         self._pipe: Any = None
         self._last_projection_metadata: Dict[str, Any] = {}
+        self.prompt = prompt
 
     def run(self, ctx: StageContext) -> StageResult:
         paths = ctx.paths
@@ -68,8 +71,8 @@ class FluxOutpaintingStage(Stage):
         stage_cfg = ctx.stage_config(self.name)
         paths.outpainting.mkdir(parents=True, exist_ok=True)
 
-        prompt = str(stage_cfg.get("prompt", DEFAULT_PROMPT))
-        seed = stage_cfg.get("seed")
+        prompt = self.prompt
+        seed = None
 
         source, input_kind = self._find_source(paths)
         if input_kind == "panorama":
@@ -114,9 +117,9 @@ class FluxOutpaintingStage(Stage):
             "width": init_image.width,
             "image": init_image,
             "mask_image": Image.fromarray((mask.astype(np.uint8) * 255), mode="L"),
-            "num_inference_steps": int(stage_cfg.get("num_inference_steps", self.num_inference_steps)),
-            "guidance_scale": float(stage_cfg.get("guidance_scale", self.guidance_scale)),
-            "blend_extend": int(stage_cfg.get("blend_extend", self.blend_extend)),
+            "num_inference_steps": int(self.num_inference_steps),
+            "guidance_scale": float(self.guidance_scale),
+            "blend_extend": int(self.blend_extend),
         }
         if generator is not None:
             kwargs["generator"] = generator
@@ -174,7 +177,7 @@ class FluxOutpaintingStage(Stage):
         image = self._resize_for_inpaint(image)
 
         stage_cfg = ctx.stage_config(self.name)
-        bottom_mask_start = float(stage_cfg.get("bottom_mask_start", self.bottom_mask_start))
+        bottom_mask_start = float(self.bottom_mask_start)
         bottom_mask_start = min(max(bottom_mask_start, 0.0), 1.0)
 
         mask = np.zeros((image.height, image.width), dtype=bool)
@@ -198,28 +201,15 @@ class FluxOutpaintingStage(Stage):
     ) -> Tuple[Image.Image, np.ndarray]:
         from sonoworld.utils.panorama_utils import angle_to_radians, project_fov_to_panorama
 
-        stage_cfg = ctx.stage_config(self.name)
         image = Image.open(source).convert("RGB")
 
-        fov_x = stage_cfg.get("fov_x")
-        elevation = stage_cfg.get("elevation")
-        roll = stage_cfg.get("roll")
-        if fov_x is None or elevation is None:
-            calibrated_fov_x, calibrated_elevation, calibrated_roll = self._calibrate_fov_image(
-                image,
-                ctx.device,
-            )
-            fov_x = calibrated_fov_x if fov_x is None else angle_to_radians(float(fov_x))
-            elevation = (
-                calibrated_elevation
-                if elevation is None
-                else angle_to_radians(float(elevation))
-            )
-            roll = calibrated_roll if roll is None else angle_to_radians(float(roll))
-        else:
-            fov_x = angle_to_radians(float(fov_x))
-            elevation = angle_to_radians(float(elevation))
-            roll = 0.0 if roll is None else angle_to_radians(float(roll))
+        calibrated_fov_x, calibrated_elevation, calibrated_roll = self._calibrate_fov_image(
+            image,
+            ctx.device,
+        )
+        fov_x = calibrated_fov_x
+        elevation = calibrated_elevation
+        roll = calibrated_roll
 
         self._last_projection_metadata = {
             "fov_x_deg": float(np.rad2deg(fov_x)),
@@ -232,7 +222,7 @@ class FluxOutpaintingStage(Stage):
             fov_x=fov_x,
             elevation=elevation,
             roll=roll,
-            pano_res=int(stage_cfg.get("panorama_resolution", self.panorama_resolution)),
+            pano_res=int(self.panorama_resolution),
         )
         return Image.fromarray(pano.astype(np.uint8), mode="RGB"), mask
 
@@ -320,10 +310,7 @@ class FluxOutpaintingStage(Stage):
         ctx: StageContext,
         size: Tuple[int, int],
     ) -> Optional[np.ndarray]:
-        stage_cfg = ctx.stage_config(self.name)
         candidates = []
-        if stage_cfg.get("mask_path"):
-            candidates.append(Path(stage_cfg["mask_path"]))
         candidates.extend(
             [
                 ctx.scene_root / "expanded_mask.png",

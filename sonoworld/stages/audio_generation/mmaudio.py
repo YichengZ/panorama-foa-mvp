@@ -39,6 +39,7 @@ class MMAudioGenerationStage(Stage):
         sample_rate: Optional[int] = None,
         negative_prompt: str = "Low quality.",
         apply_peak_gain: bool = True,
+        **kwargs: Any,
     ) -> None:
         self.model_name = model_name
         self.model_variant = model_variant

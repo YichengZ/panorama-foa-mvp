@@ -34,6 +34,7 @@ class GPTUnderstandingStage(Stage):
         prompt_path: str = DEFAULT_PROMPT_PATH,
         max_retries: int = 3,
         grounding_threshold: float = 0.7,
+        **kwargs: Any,
     ) -> None:
         self.model = model
         self.prompt_path = prompt_path

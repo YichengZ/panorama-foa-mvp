@@ -45,6 +45,9 @@ class Stage(ABC):
     name: str
     backend: str
 
+    def __init__(self, **kwargs: Any) -> None:
+        ...
+
     @abstractmethod
     def run(self, ctx: StageContext) -> StageResult:
         raise NotImplementedError

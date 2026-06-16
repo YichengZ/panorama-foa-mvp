@@ -950,7 +950,7 @@ class SAM3SegmentationStage(Stage):
 
 
 class SAM3ImagePredictor:
-    def __init__(self, processor: Any, min_mask_area: int = 16) -> None:
+    def __init__(self, processor: Any, min_mask_area: int = 16, **kwargs: Any) -> None:
         self.processor = processor
         self.min_mask_area = int(min_mask_area)
 

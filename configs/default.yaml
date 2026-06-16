@@ -21,7 +21,7 @@ stages:
   segmentation:
     enabled: true
     class_path: sonoworld.stages.segmentation.sam3.SAM3SegmentationStage
-    sam3_root: <your_sam3_root_path>
+    sam3_root: third_party/sam3
     checkpoint_path: null
     load_from_hf: true
     processor_resolution: 1008

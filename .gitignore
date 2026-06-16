@@ -23,3 +23,5 @@ htmlcov/
 .DS_Store
 
 output/
+outputs/
+/third_party/
