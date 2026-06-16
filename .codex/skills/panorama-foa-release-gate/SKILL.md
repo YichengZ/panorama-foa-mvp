@@ -17,6 +17,7 @@ Use this gate before declaring completion.
 - FOA coordinate and direction tests pass for front, left, right, back, up, and full spread.
 - Final mix uses one global scalar when limiting peak; channels are never normalized independently.
 - No unresolved P0/P1 findings remain.
+- Local MMAudio provider tests pass with a fake adapter; no GPU, model weights, or network are required for tests.
 - No Marble, SAM3, segmentation voting, HunyuanWorld, 3DGS, depth, point cloud, HRTF, player, frontend, or true 6DoF implementation appears.
 
 ## Required Verdict

@@ -19,7 +19,12 @@ PLANNER_MANUAL = "manual"
 SUPPORTED_PLANNERS = {PLANNER_OPENAI, PLANNER_MANUAL}
 AUDIO_PROVIDER_ELEVENLABS = "elevenlabs"
 AUDIO_PROVIDER_MOCK = "mock"
-SUPPORTED_AUDIO_PROVIDERS = {AUDIO_PROVIDER_ELEVENLABS, AUDIO_PROVIDER_MOCK}
+AUDIO_PROVIDER_MMAUDIO = "mmaudio"
+SUPPORTED_AUDIO_PROVIDERS = {
+    AUDIO_PROVIDER_ELEVENLABS,
+    AUDIO_PROVIDER_MMAUDIO,
+    AUDIO_PROVIDER_MOCK,
+}
 
 
 @app.command()
@@ -29,7 +34,7 @@ def generate(
     duration: float = typer.Option(16.0, min=0.5, max=30.0),
     planner: str = typer.Option("openai"),
     plan: Optional[Path] = typer.Option(None, exists=True, readable=True),
-    audio_provider: str = typer.Option("elevenlabs"),
+    audio_provider: str = typer.Option(AUDIO_PROVIDER_MMAUDIO),
     yaw_offset: float = typer.Option(0.0),
     max_sources: int = typer.Option(5),
     allow_speech: bool = typer.Option(False),
@@ -60,7 +65,7 @@ def generate(
 def render(
     plan: Path = typer.Option(..., exists=True, readable=True),
     output: Path = typer.Option(...),
-    audio_provider: str = typer.Option("elevenlabs"),
+    audio_provider: str = typer.Option(AUDIO_PROVIDER_MMAUDIO),
     yaw_offset: float = typer.Option(0.0),
     force: bool = typer.Option(False),
 ) -> None:
@@ -162,6 +167,15 @@ def _build_pipeline(
 
     if audio_provider_name == AUDIO_PROVIDER_MOCK:
         provider = MockTextToAudioProvider()
+    elif audio_provider_name == AUDIO_PROVIDER_MMAUDIO:
+        try:
+            from panorama_foa.audio.mmaudio import MMAudioTextToAudioProvider
+            from panorama_foa.config import Settings
+
+            settings = Settings.from_env()
+            provider = MMAudioTextToAudioProvider(settings=settings)
+        except Exception as exc:
+            raise typer.BadParameter(f"MMAudio provider is not configured: {exc}") from exc
     else:
         try:
             from panorama_foa.audio.elevenlabs import ElevenLabsSoundEffectsProvider

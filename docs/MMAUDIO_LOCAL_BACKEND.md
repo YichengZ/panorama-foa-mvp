@@ -1,4 +1,4 @@
-# MMAudio Local Backend Plan
+# MMAudio Local Backend
 
 ## Decision
 
@@ -77,15 +77,15 @@ sample_rate: 48000 after post-processing
 Prefer reduced precision for inference if the upstream MMAudio package supports
 it reliably on the server. Keep full precision as a fallback.
 
-## Required Integration Work
+## Implemented Integration
 
-Add a new provider in `panorama_foa_mvp`:
+`panorama_foa_mvp` exposes the local backend as:
 
 ```text
 --audio-provider mmaudio
 ```
 
-The provider must:
+The provider:
 
 - Implement `TextToAudioProvider.generate(...)`.
 - Generate one mono-compatible raw stem per requested prompt.
@@ -94,6 +94,19 @@ The provider must:
   remove DC, fit exact duration, check silence, apply gain.
 - Preserve the existing FOA encoder, mixer, WAV exporter, and metadata.
 - Be covered by tests using a fake local MMAudio adapter.
+
+Configuration is read from `.env` or environment variables:
+
+```bash
+MMAUDIO_MODEL_VARIANT=large_44k_v2
+MMAUDIO_MODEL_PATH=.cache/weights/mmaudio
+MMAUDIO_DEVICE=cuda:0
+MMAUDIO_STEPS=25
+MMAUDIO_GUIDANCE_SCALE=7.5
+MMAUDIO_FULL_PRECISION=false
+MMAUDIO_INFERENCE_MODE=euler
+MMAUDIO_SONOWORLD_ROOT=/path/to/sonoworld
+```
 
 ## Explicitly Not Required
 
@@ -105,9 +118,9 @@ Do not enable these upstream SonoWorld stages for this MVP:
 - HRTF, player, frontend, WebXR, or true 6DoF.
 - Original SonoWorld spatialization stages.
 
-## Deployment Check Command
+## Deployment Check Commands
 
-Before implementing the provider, collect:
+Before running the real provider on the server, collect:
 
 ```bash
 nvidia-smi
@@ -118,4 +131,20 @@ free -h
 ```
 
 Then install and smoke-test MMAudio independently before wiring it into the
-FOA pipeline.
+FOA pipeline. After environment setup, run:
+
+```bash
+cd panorama_foa_mvp
+python -m panorama_foa.cli generate \
+  --panorama assets/panoramas/starship_captain_private_quarters.png \
+  --output /tmp/panorama_foa_starship_mmaudio \
+  --planner manual \
+  --plan examples/starship_captain_private_quarters_plan.json \
+  --audio-provider mmaudio \
+  --duration 15 \
+  --yaw-offset 0 \
+  --force
+```
+
+Expected output files include `scene_foa.wav`, `scene_foa.metadata.json`,
+`scene_plan.json`, `raw_audio/`, `stems/`, and `panorama_analysis.jpg`.

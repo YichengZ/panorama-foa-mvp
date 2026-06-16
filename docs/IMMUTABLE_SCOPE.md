@@ -7,6 +7,7 @@ This project adds one independent subproject, `panorama_foa_mvp/`, to the SonoWo
 - Validate a single 2:1 equirectangular panorama.
 - Produce a VLM or manual `ScenePlan`.
 - Generate isolated mono text-to-audio stems.
+- Generate real stems through the local `MMAudioTextToAudioProvider` when MMAudio is installed on a GPU server.
 - Encode and mix deterministic first-order Ambisonics.
 - Export a 4-channel 48 kHz WAV using AmbiX, ACN, SN3D, channel labels `[W,Y,Z,X]`.
 - Provide metadata that states coordinate and ambisonic conventions.

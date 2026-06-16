@@ -18,5 +18,5 @@
 - Target deployment for real sound generation is a local MMAudio backend, not ElevenLabs.
 - Available server class reported by the user: 8x NVIDIA RTX 4090. This is more than sufficient for MMAudio inference; a single 4090 should be enough for one 15-second stem, and the 8-GPU server can later parallelize stems or jobs.
 - ElevenLabs remains an implemented optional provider and useful API fallback, but it should not be treated as the preferred production path when the local server is available.
-- The next implementation step is a `MMAudioTextToAudioProvider` for `panorama_foa_mvp`, exposed as `--audio-provider mmaudio`, while preserving the existing provider interface and FOA/mixer/export contracts.
+- `MMAudioTextToAudioProvider` is implemented for `panorama_foa_mvp` and exposed as `--audio-provider mmaudio`, while preserving the existing provider interface and FOA/mixer/export contracts.
 - Integrating MMAudio into `panorama_foa_mvp` must not enable SonoWorld's SAM3, Marble, depth, point-cloud, segmentation, player, frontend, or true 6DoF stages.

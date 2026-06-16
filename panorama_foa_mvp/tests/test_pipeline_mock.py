@@ -204,6 +204,50 @@ def test_mock_cli_end_to_end_outputs_contract_files(tmp_path, panorama_fixture, 
     assert plan["duration_seconds"] == 1.0
 
 
+def test_mmaudio_cli_path_can_run_with_fake_local_provider(
+    monkeypatch,
+    tmp_path,
+    panorama_fixture,
+    fixtures_dir,
+):
+    from panorama_foa.audio.mock import MockTextToAudioProvider
+
+    class FakeMMAudioProvider(MockTextToAudioProvider):
+        raw_extension = ".wav"
+
+    import panorama_foa.audio.mmaudio as mmaudio_module
+
+    monkeypatch.setattr(
+        mmaudio_module,
+        "MMAudioTextToAudioProvider",
+        lambda *, settings: FakeMMAudioProvider(),
+    )
+
+    output = tmp_path / "scene"
+    result = CliRunner().invoke(
+        app,
+        [
+            "generate",
+            "--panorama",
+            str(panorama_fixture),
+            "--output",
+            str(output),
+            "--planner",
+            "manual",
+            "--plan",
+            str(fixtures_dir / "manual_plan.json"),
+            "--audio-provider",
+            "mmaudio",
+            "--duration",
+            "1.0",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (output / "scene_foa.wav").exists()
+    assert (output / "raw_audio" / "global_ambience.wav").exists()
+
+
 def test_mock_cli_rejects_schema_invalid_duration_before_artifacts(
     tmp_path,
     panorama_fixture,

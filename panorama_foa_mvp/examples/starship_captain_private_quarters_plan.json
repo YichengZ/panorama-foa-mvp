@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "scene_description": "Starship captain private quarters with sleeping bunks on the left, console panels and storage on the right, and a sealed cabin door ahead.",
+  "duration_seconds": 15.0,
+  "global_ambience": {
+    "id": "global_ambience",
+    "label": "ship cabin ambience",
+    "prompt": "subtle futuristic starship cabin room tone, low ventilation rumble, distant hull resonance, quiet electrical presence, no speech, no music",
+    "gain_db": -21.0,
+    "loop": true,
+    "confidence": 1.0
+  },
+  "regional_sources": [
+    {
+      "id": "left_sleeping_bunks",
+      "label": "left sleeping bunks",
+      "prompt": "soft fabric rustle and quiet air circulation around compact sleeping bunks, gentle mechanical bedding creaks, no human voice",
+      "center_u": 0.31,
+      "center_v": 0.54,
+      "spread": 0.35,
+      "gain_db": -23.0,
+      "loop": true,
+      "confidence": 0.86
+    },
+    {
+      "id": "right_console_panels",
+      "label": "right console panels",
+      "prompt": "subtle futuristic console electronics, low servo clicks, tiny interface beeps, screen hums and soft power supply noise, no speech",
+      "center_u": 0.66,
+      "center_v": 0.50,
+      "spread": 0.28,
+      "gain_db": -18.0,
+      "loop": true,
+      "confidence": 0.9
+    },
+    {
+      "id": "front_cabin_door",
+      "label": "front cabin door",
+      "prompt": "faint sealed bulkhead vibration and distant corridor machinery beyond a starship cabin door, muffled and steady, no speech",
+      "center_u": 0.50,
+      "center_v": 0.50,
+      "spread": 0.22,
+      "gain_db": -24.0,
+      "loop": true,
+      "confidence": 0.78
+    },
+    {
+      "id": "overhead_light_strips",
+      "label": "overhead light strips",
+      "prompt": "barely audible overhead light strip buzz, clean futuristic fluorescent electrical tone, high and quiet, no melody",
+      "center_u": 0.50,
+      "center_v": 0.18,
+      "spread": 0.45,
+      "gain_db": -28.0,
+      "loop": true,
+      "confidence": 0.74
+    }
+  ]
+}

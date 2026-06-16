@@ -18,11 +18,8 @@ The preferred production audio backend is local MMAudio inference. ElevenLabs is
 The current implementation supports:
 
 - `--audio-provider mock` for offline tests and deterministic development.
-- `--audio-provider elevenlabs` for optional paid API generation.
-
-Planned next backend:
-
 - `--audio-provider mmaudio` using a local MMAudio installation to generate mono-compatible stems that are then post-processed and encoded by this project into FOA.
+- `--audio-provider elevenlabs` for optional paid API fallback generation.
 
 MMAudio integration must stay inside this subproject's provider interface. It must not enable or depend on SonoWorld's SAM3, Marble, segmentation, depth, point-cloud, player, frontend, or true 6DoF stages.
 
@@ -66,6 +63,33 @@ CUDA/PyTorch: match the installed NVIDIA driver; SonoWorld was tested with CUDA 
 
 For the MVP scene size, assume at most six generated stems: one global ambience plus up to five regional sources. Generation can be sequential on one GPU first, then parallelized after quality and stability are confirmed.
 
+The local provider reads these environment variables from `.env` or the shell:
+
+```bash
+MMAUDIO_MODEL_VARIANT=large_44k_v2
+MMAUDIO_MODEL_PATH=.cache/weights/mmaudio
+MMAUDIO_DEVICE=cuda:0
+MMAUDIO_STEPS=25
+MMAUDIO_GUIDANCE_SCALE=7.5
+MMAUDIO_FULL_PRECISION=false
+MMAUDIO_INFERENCE_MODE=euler
+MMAUDIO_SONOWORLD_ROOT=/path/to/sonoworld
+```
+
+Server smoke command for the provided starship panorama:
+
+```bash
+python -m panorama_foa.cli generate \
+  --panorama assets/panoramas/starship_captain_private_quarters.png \
+  --output /tmp/panorama_foa_starship_mmaudio \
+  --planner manual \
+  --plan examples/starship_captain_private_quarters_plan.json \
+  --audio-provider mmaudio \
+  --duration 15 \
+  --yaw-offset 0 \
+  --force
+```
+
 ## Optional ElevenLabs API Commands
 
 Configure `.env` from `.env.example` and use:
@@ -105,6 +129,7 @@ pytest -q
 ```
 
 Tests use mock providers or mocked HTTP clients and must pass without OpenAI or ElevenLabs API keys.
+MMAudio tests use a fake local adapter and do not require GPUs, model weights, or network access.
 
 ## Known Limits
 
