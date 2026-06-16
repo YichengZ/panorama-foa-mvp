@@ -84,11 +84,34 @@ def plan_command(
     panorama: Path = typer.Option(..., exists=True, readable=True),
     output: Path = typer.Option(...),
     duration: float = typer.Option(16.0),
+    max_sources: int = typer.Option(5),
+    allow_speech: bool = typer.Option(False),
+    allow_music: bool = typer.Option(False),
+    scene_description: Optional[str] = typer.Option(None),
 ) -> None:
-    _ = panorama
-    raise typer.BadParameter(
-        "Automatic OpenAI planning is available through generate with --planner openai after API configuration."
+    try:
+        from panorama_foa.config import Settings
+        from panorama_foa.planner.openai_vlm import OpenAIVLMScenePlanner
+
+        settings = Settings.from_env(require_openai=True)
+        planner = OpenAIVLMScenePlanner(
+            api_key=settings.openai_api_key,
+            model=settings.openai_vision_model,
+        )
+    except Exception as exc:
+        raise typer.BadParameter(f"OpenAI planner is not configured: {exc}") from exc
+
+    plan = planner.plan(
+        panorama_path=panorama,
+        duration_seconds=duration,
+        scene_description=scene_description,
+        max_sources=max_sources,
+        allow_speech=allow_speech,
+        allow_music=allow_music,
     )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(plan.model_dump_json(indent=2) + "\n")
+    console.print(str(output))
 
 
 def _build_pipeline(
@@ -104,8 +127,11 @@ def _build_pipeline(
             from panorama_foa.config import Settings
             from panorama_foa.planner.openai_vlm import OpenAIVLMScenePlanner
 
-            settings = Settings.from_env()
-            planner = OpenAIVLMScenePlanner(model=settings.openai_vision_model)
+            settings = Settings.from_env(require_openai=True)
+            planner = OpenAIVLMScenePlanner(
+                api_key=settings.openai_api_key,
+                model=settings.openai_vision_model,
+            )
         except Exception as exc:
             raise typer.BadParameter(f"OpenAI planner is not configured: {exc}") from exc
     else:
@@ -137,4 +163,3 @@ def _build_pipeline(
 
 if __name__ == "__main__":
     app()
-

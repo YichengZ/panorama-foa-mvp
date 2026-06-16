@@ -9,6 +9,7 @@ import soundfile as sf
 
 class MockTextToAudioProvider:
     sample_rate = 48000
+    raw_extension = ".wav"
 
     def generate(
         self,
@@ -40,4 +41,3 @@ class MockTextToAudioProvider:
             signal *= 0.5 / peak
         sf.write(output_path, signal, self.sample_rate, subtype="PCM_16")
         return output_path
-

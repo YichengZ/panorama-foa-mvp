@@ -39,6 +39,8 @@ class ElevenLabsProviderError(RuntimeError):
 class ElevenLabsSoundEffectsProvider:
     """Generate raw sound layers with ElevenLabs Sound Effects API."""
 
+    raw_extension = ".mp3"
+
     def __init__(
         self,
         *,

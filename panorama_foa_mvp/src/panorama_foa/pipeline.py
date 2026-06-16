@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -97,13 +96,13 @@ class PanoramaToFOAPipeline:
             loop=plan.global_ambience.loop,
             gain_db=plan.global_ambience.gain_db,
             duration_seconds=plan.duration_seconds,
-            raw_path=raw_dir / "global_ambience.wav",
+            raw_path=raw_dir / f"global_ambience{self._raw_extension()}",
             stem_path=stems_dir / "global_ambience.wav",
         )
         layers.append(encode_global_ambience(global_stem))
 
         for index, source in enumerate(plan.regional_sources):
-            raw_name = f"source_{index:02d}.wav"
+            raw_name = f"source_{index:02d}{self._raw_extension()}"
             stem_name = f"source_{index:02d}.wav"
             stem = self._generate_stem(
                 source_id=source.id,
@@ -154,7 +153,12 @@ class PanoramaToFOAPipeline:
                 loop=loop,
                 output_path=raw_path,
             )
-        data, sample_rate = sf.read(raw_path, dtype="float32", always_2d=False)
+        readable_path = raw_path
+        if raw_path.suffix.lower() not in {".wav", ".flac", ".aiff", ".aif"}:
+            decoded_path = stem_path.with_name(f"{stem_path.stem}.decoded.wav")
+            decode_to_mono_wav(raw_path, decoded_path)
+            readable_path = decoded_path
+        data, sample_rate = sf.read(readable_path, dtype="float32", always_2d=False)
         stem = process_mono_audio(
             data,
             sample_rate=sample_rate,
@@ -163,7 +167,15 @@ class PanoramaToFOAPipeline:
             source_id=source_id,
         )
         sf.write(stem_path, stem, TARGET_SAMPLE_RATE, subtype="PCM_16")
+        if readable_path != raw_path:
+            readable_path.unlink(missing_ok=True)
         return stem
+
+    def _raw_extension(self) -> str:
+        extension = getattr(self.audio_provider, "raw_extension", ".wav")
+        if not str(extension).startswith("."):
+            return f".{extension}"
+        return str(extension)
 
     def _copy_analysis_image(self, panorama_path: Path, analysis_path: Path) -> None:
         try:
@@ -189,4 +201,3 @@ def build_mock_manual_pipeline(plan_path: Path, *, yaw_offset_deg: float = 0.0, 
         yaw_offset_deg=yaw_offset_deg,
         force=force,
     )
-

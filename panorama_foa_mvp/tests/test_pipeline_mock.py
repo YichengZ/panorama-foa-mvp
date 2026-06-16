@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+import numpy as np
 import soundfile as sf
 from typer.testing import CliRunner
 
@@ -86,3 +87,35 @@ def test_mock_cli_end_to_end_outputs_contract_files(tmp_path, panorama_fixture, 
     plan = json.loads((output / "scene_plan.json").read_text())
     assert plan["duration_seconds"] == 1.0
 
+
+def test_pipeline_decodes_non_wav_raw_audio(monkeypatch, tmp_path, panorama_fixture, fixtures_dir):
+    from panorama_foa.audio.mock import MockTextToAudioProvider
+    from panorama_foa.pipeline import build_mock_manual_pipeline
+
+    class Mp3NamedMockProvider(MockTextToAudioProvider):
+        raw_extension = ".mp3"
+
+        def generate(self, *, prompt, duration_seconds, loop, output_path):
+            _ = (prompt, duration_seconds, loop)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_bytes(b"fake mp3 bytes")
+            return output_path
+
+    pipeline = build_mock_manual_pipeline(fixtures_dir / "manual_plan.json")
+    pipeline.audio_provider = Mp3NamedMockProvider()
+    decoded_calls = []
+
+    def fake_decode(raw_path, output_path):
+        decoded_calls.append((raw_path, output_path))
+        sf.write(output_path, np.sin(np.linspace(0, 10, 48000)).astype("float32"), 48000)
+        return output_path
+
+    monkeypatch.setattr("panorama_foa.pipeline.decode_to_mono_wav", fake_decode)
+    pipeline.run(
+        panorama_path=panorama_fixture,
+        output_dir=tmp_path / "scene",
+        duration_seconds=1.0,
+    )
+
+    assert decoded_calls
+    assert all(call[0].suffix == ".mp3" for call in decoded_calls)

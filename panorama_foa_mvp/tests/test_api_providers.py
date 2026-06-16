@@ -89,6 +89,7 @@ def test_elevenlabs_provider_writes_raw_audio_and_redacts_key(tmp_path):
     assert requests[0].headers["xi-api-key"] == "secret-key"
     assert '"model_id":"model"' in body
     assert "mono-compatible" in body
+    assert provider.raw_extension == ".mp3"
 
 
 def test_elevenlabs_provider_retries_429_then_succeeds(tmp_path):
@@ -130,4 +131,3 @@ def test_settings_from_env_keeps_api_keys_optional_for_mock_tests(monkeypatch):
     settings = Settings.from_env()
     assert settings.openai_api_key == ""
     assert settings.elevenlabs_api_key == ""
-
