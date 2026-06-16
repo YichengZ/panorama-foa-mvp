@@ -16,7 +16,7 @@ from panorama_foa.audio.provider_base import TextToAudioProvider
 from panorama_foa.coordinates import normalized_panorama_to_angles
 from panorama_foa.planner.base import ScenePlanner
 from panorama_foa.planner.manual import ManualPlanPlanner
-from panorama_foa.schemas import ScenePlan
+from panorama_foa.schemas import MAX_REGIONAL_SOURCES, ScenePlan
 
 
 @dataclass
@@ -28,6 +28,7 @@ class PipelineResult:
 
 
 def validate_and_filter_plan(plan: ScenePlan, *, duration_seconds: float, max_sources: int) -> ScenePlan:
+    source_limit = max(0, min(int(max_sources), MAX_REGIONAL_SOURCES))
     kept = []
     seen_labels = set()
     for source in sorted(plan.regional_sources, key=lambda item: item.confidence, reverse=True):
@@ -38,7 +39,7 @@ def validate_and_filter_plan(plan: ScenePlan, *, duration_seconds: float, max_so
             continue
         seen_labels.add(label_key)
         kept.append(source)
-        if len(kept) >= max_sources:
+        if len(kept) >= source_limit:
             break
     data = plan.model_dump()
     data["duration_seconds"] = duration_seconds

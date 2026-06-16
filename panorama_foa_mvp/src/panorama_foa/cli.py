@@ -14,6 +14,13 @@ from panorama_foa.schemas import ScenePlan
 app = typer.Typer(no_args_is_help=True)
 console = Console()
 
+PLANNER_OPENAI = "openai"
+PLANNER_MANUAL = "manual"
+SUPPORTED_PLANNERS = {PLANNER_OPENAI, PLANNER_MANUAL}
+AUDIO_PROVIDER_ELEVENLABS = "elevenlabs"
+AUDIO_PROVIDER_MOCK = "mock"
+SUPPORTED_AUDIO_PROVIDERS = {AUDIO_PROVIDER_ELEVENLABS, AUDIO_PROVIDER_MOCK}
+
 
 @app.command()
 def generate(
@@ -122,7 +129,21 @@ def _build_pipeline(
     yaw_offset: float,
     force: bool,
 ) -> PanoramaToFOAPipeline:
-    if planner_name != "manual":
+    planner_name = planner_name.strip().lower()
+    audio_provider_name = audio_provider_name.strip().lower()
+
+    if planner_name not in SUPPORTED_PLANNERS:
+        raise typer.BadParameter(
+            f"unknown planner: {planner_name}. "
+            f"Expected one of: {', '.join(sorted(SUPPORTED_PLANNERS))}"
+        )
+    if audio_provider_name not in SUPPORTED_AUDIO_PROVIDERS:
+        raise typer.BadParameter(
+            f"unknown audio provider: {audio_provider_name}. "
+            f"Expected one of: {', '.join(sorted(SUPPORTED_AUDIO_PROVIDERS))}"
+        )
+
+    if planner_name == PLANNER_OPENAI:
         try:
             from panorama_foa.config import Settings
             from panorama_foa.planner.openai_vlm import OpenAIVLMScenePlanner
@@ -139,9 +160,9 @@ def _build_pipeline(
             raise typer.BadParameter("--plan is required when --planner manual")
         planner = ManualPlanPlanner(plan_path)
 
-    if audio_provider_name == "mock":
+    if audio_provider_name == AUDIO_PROVIDER_MOCK:
         provider = MockTextToAudioProvider()
-    elif audio_provider_name == "elevenlabs":
+    else:
         try:
             from panorama_foa.audio.elevenlabs import ElevenLabsSoundEffectsProvider
             from panorama_foa.config import Settings
@@ -150,8 +171,6 @@ def _build_pipeline(
             provider = ElevenLabsSoundEffectsProvider(settings=settings)
         except Exception as exc:
             raise typer.BadParameter(f"ElevenLabs provider is not configured: {exc}") from exc
-    else:
-        raise typer.BadParameter(f"unknown audio provider: {audio_provider_name}")
 
     return PanoramaToFOAPipeline(
         planner=planner,

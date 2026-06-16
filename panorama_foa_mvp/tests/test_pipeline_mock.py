@@ -3,12 +3,13 @@ from __future__ import annotations
 import json
 
 import numpy as np
+import pytest
 import soundfile as sf
 from typer.testing import CliRunner
 
 from panorama_foa.cli import app
 from panorama_foa.pipeline import validate_and_filter_plan
-from panorama_foa.schemas import GlobalAmbience, RegionalSource, ScenePlan
+from panorama_foa.schemas import GlobalAmbience, MAX_REGIONAL_SOURCES, RegionalSource, ScenePlan
 
 
 def test_validate_and_filter_plan_caps_filters_dedupes_and_overrides_duration():
@@ -21,9 +22,9 @@ def test_validate_and_filter_plan_caps_filters_dedupes_and_overrides_duration():
             center_v=0.5,
             spread=0.2,
             gain_db=-12.0,
-            confidence=1.0 if index != 6 else 0.2,
+            confidence=1.0 if index != 4 else 0.2,
         )
-        for index in range(7)
+        for index in range(MAX_REGIONAL_SOURCES)
     ]
     plan = ScenePlan(
         scene_description="test",
@@ -37,12 +38,127 @@ def test_validate_and_filter_plan_caps_filters_dedupes_and_overrides_duration():
         regional_sources=sources,
     )
 
-    filtered = validate_and_filter_plan(plan, duration_seconds=2.0, max_sources=5)
+    filtered = validate_and_filter_plan(plan, duration_seconds=2.0, max_sources=3)
     assert filtered.duration_seconds == 2.0
-    assert len(filtered.regional_sources) <= 5
+    assert len(filtered.regional_sources) == 3
     assert all(source.confidence >= 0.6 for source in filtered.regional_sources)
     labels = [source.label for source in filtered.regional_sources]
     assert len(labels) == len(set(labels))
+
+
+def test_scene_plan_rejects_more_than_five_regional_sources():
+    sources = [
+        RegionalSource(
+            id=f"source_{index}",
+            label=f"source {index}",
+            prompt=f"prompt {index}",
+            center_u=0.1,
+            center_v=0.5,
+            spread=0.2,
+            gain_db=-12.0,
+            confidence=1.0,
+        )
+        for index in range(MAX_REGIONAL_SOURCES + 1)
+    ]
+
+    with pytest.raises(ValueError):
+        ScenePlan(
+            scene_description="too many",
+            duration_seconds=1.0,
+            global_ambience=GlobalAmbience(
+                label="ambience",
+                prompt="quiet ambience",
+                gain_db=-24.0,
+                confidence=1.0,
+            ),
+            regional_sources=sources,
+        )
+
+
+def test_validate_and_filter_plan_enforces_hard_source_cap_even_when_requested_higher():
+    sources = [
+        RegionalSource(
+            id=f"source_{index}",
+            label=f"source {index}",
+            prompt=f"prompt {index}",
+            center_u=0.1,
+            center_v=0.5,
+            spread=0.2,
+            gain_db=-12.0,
+            confidence=1.0,
+        )
+        for index in range(MAX_REGIONAL_SOURCES)
+    ]
+    plan = ScenePlan(
+        scene_description="test",
+        duration_seconds=1.0,
+        global_ambience=GlobalAmbience(
+            label="ambience",
+            prompt="quiet ambience",
+            gain_db=-24.0,
+            confidence=1.0,
+        ),
+        regional_sources=sources,
+    )
+
+    filtered = validate_and_filter_plan(plan, duration_seconds=1.0, max_sources=50)
+
+    assert len(filtered.regional_sources) == MAX_REGIONAL_SOURCES
+
+
+def test_cli_rejects_unknown_planner_without_falling_back_to_openai(
+    monkeypatch,
+    tmp_path,
+    panorama_fixture,
+    fixtures_dir,
+):
+    monkeypatch.setenv("OPENAI_API_KEY", "should-not-be-used")
+    result = CliRunner().invoke(
+        app,
+        [
+            "generate",
+            "--panorama",
+            str(panorama_fixture),
+            "--output",
+            str(tmp_path / "scene"),
+            "--planner",
+            "manul",
+            "--plan",
+            str(fixtures_dir / "manual_plan.json"),
+            "--audio-provider",
+            "mock",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "unknown planner" in result.output
+    assert "OpenAI planner is not configured" not in result.output
+
+
+def test_cli_rejects_unknown_audio_provider(
+    tmp_path,
+    panorama_fixture,
+    fixtures_dir,
+):
+    result = CliRunner().invoke(
+        app,
+        [
+            "generate",
+            "--panorama",
+            str(panorama_fixture),
+            "--output",
+            str(tmp_path / "scene"),
+            "--planner",
+            "manual",
+            "--plan",
+            str(fixtures_dir / "manual_plan.json"),
+            "--audio-provider",
+            "elevenlab",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "unknown audio provider" in result.output
 
 
 def test_mock_cli_end_to_end_outputs_contract_files(tmp_path, panorama_fixture, fixtures_dir):

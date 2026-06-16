@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+MAX_REGIONAL_SOURCES = 5
+
 
 class GlobalAmbience(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -37,7 +39,10 @@ class ScenePlan(BaseModel):
     scene_description: str
     duration_seconds: float = Field(ge=0.5, le=30.0)
     global_ambience: GlobalAmbience
-    regional_sources: list[RegionalSource] = Field(default_factory=list)
+    regional_sources: list[RegionalSource] = Field(
+        default_factory=list,
+        max_length=MAX_REGIONAL_SOURCES,
+    )
 
     @field_validator("regional_sources")
     @classmethod
