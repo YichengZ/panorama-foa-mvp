@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "scene_description": "Example panorama soundscape",
+  "duration_seconds": 16.0,
+  "global_ambience": {
+    "id": "global_ambience",
+    "label": "soft outdoor air",
+    "prompt": "quiet natural outdoor ambience, mono-compatible",
+    "gain_db": -24.0,
+    "loop": true,
+    "confidence": 1.0
+  },
+  "regional_sources": [
+    {
+      "id": "source_00",
+      "label": "front water",
+      "prompt": "isolated gentle water sound, clean natural mono-compatible",
+      "center_u": 0.5,
+      "center_v": 0.55,
+      "spread": 0.35,
+      "gain_db": -12.0,
+      "loop": true,
+      "confidence": 0.9
+    }
+  ]
+}
+

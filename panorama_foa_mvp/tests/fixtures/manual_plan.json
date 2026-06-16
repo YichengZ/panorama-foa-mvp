@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "scene_description": "Synthetic directional test panorama",
+  "duration_seconds": 2.0,
+  "global_ambience": {
+    "id": "global_ambience",
+    "label": "quiet background",
+    "prompt": "quiet diffuse environmental background",
+    "gain_db": -24.0,
+    "loop": true,
+    "confidence": 1.0
+  },
+  "regional_sources": [
+    {
+      "id": "front_source",
+      "label": "front test source",
+      "prompt": "steady isolated front test tone",
+      "center_u": 0.5,
+      "center_v": 0.5,
+      "spread": 0.0,
+      "gain_db": -12.0,
+      "loop": true,
+      "confidence": 1.0
+    },
+    {
+      "id": "left_source",
+      "label": "left test source",
+      "prompt": "steady isolated left test tone",
+      "center_u": 0.25,
+      "center_v": 0.5,
+      "spread": 0.2,
+      "gain_db": -14.0,
+      "loop": true,
+      "confidence": 1.0
+    }
+  ]
+}
+
