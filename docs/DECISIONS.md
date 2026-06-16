@@ -9,5 +9,6 @@
 - Upstream SonoWorld stages are reference-only and must not become runtime dependencies.
 - FOA convention is fixed as AmbiX, ACN, SN3D, channel labels `[W,Y,Z,X]`.
 - Tests use mock/manual providers by default and must not spend OpenAI or ElevenLabs credits.
-- Current host has Homebrew prefixes for Python 3.11 and ffmpeg, but `python3` and `ffmpeg` are not both on PATH by default.
-
+- Verification Python: `/Users/zhuyicheng/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3` (`Python 3.12.13`).
+- Verification ffmpeg: `/opt/homebrew/bin/ffmpeg` (`ffmpeg 8.1.1`).
+- Homebrew `python@3.11` installed but its `ensurepip` postinstall fails on this host due to a `pyexpat`/system `libexpat` symbol mismatch, so the Codex bundled Python 3.12 runtime is used for project tests.
