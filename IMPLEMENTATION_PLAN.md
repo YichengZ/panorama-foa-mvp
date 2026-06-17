@@ -8,8 +8,7 @@ longer a pre-implementation gate.
 - Canonical repo: `https://github.com/YichengZ/panorama-foa-mvp`
 - Main branch: `main`
 - MVP subproject: `panorama_foa_mvp/`
-- Reference codebase: SonoWorld, used only as reference and for the local
-  `sonoworld.models.audio_diffusion.mmaudio.MMAudioDiffusion` wrapper.
+- Historical reference codebase: SonoWorld. The local MMAudio wrapper is now vendored into `panorama_foa.audio.backends.mmaudio_diffusion`.
 
 ## Implemented
 
@@ -41,8 +40,7 @@ The next agent should run server-side local MMAudio validation:
 
 ## Scope Guard
 
-Do not enable SonoWorld's SAM3, Marble, segmentation, depth, point-cloud,
-3DGS, player, frontend, HRTF, or true 6DoF stages.
+Do not enable SAM3, Marble, segmentation, depth, point-cloud, 3DGS, player, frontend, HRTF, or true 6DoF stages.
 
 Do not call OpenAI or ElevenLabs during server smoke testing unless explicitly
 requested later. The server target is local MMAudio.

@@ -34,13 +34,9 @@ MMAUDIO_STEPS=25
 MMAUDIO_GUIDANCE_SCALE=7.5
 MMAUDIO_FULL_PRECISION=false
 MMAUDIO_INFERENCE_MODE=euler
-MMAUDIO_SONOWORLD_ROOT=
 ```
 
-Install the MMAudio dependency stack required by
-`sonoworld.models.audio_diffusion.mmaudio.MMAudioDiffusion` on the GPU server.
-Do not install or enable SonoWorld's SAM3, Marble, segmentation, depth,
-point-cloud, 3DGS, player, frontend, HRTF, or true 6DoF stages for this MVP.
+Install the MMAudio dependency stack required by the project-local `panorama_foa.audio.backends.mmaudio_diffusion.MMAudioDiffusion` wrapper on the GPU server. Do not install or enable SAM3, Marble, segmentation, depth, point-cloud, 3DGS, player, frontend, HRTF, or true 6DoF stages for this MVP.
 
 Run:
 

@@ -5,11 +5,11 @@ import pytest
 import soundfile as sf
 
 from panorama_foa.audio.mmaudio import (
+    LocalMMAudioAdapter,
     MMAudioTextToAudioProvider,
     _as_mono_float32,
-    _find_repo_root,
-    _normalize_sonoworld_root,
 )
+from panorama_foa.audio.backends.diffusion import load_audio_diffusion_model
 from panorama_foa.config import ConfigurationError, MMAudioConfig, mmaudio_config_from_env
 
 
@@ -79,7 +79,6 @@ def test_mmaudio_config_from_env_parses_server_settings(tmp_path):
             "MMAUDIO_GUIDANCE_SCALE": "8.25",
             "MMAUDIO_FULL_PRECISION": "true",
             "MMAUDIO_INFERENCE_MODE": "heun",
-            "MMAUDIO_SONOWORLD_ROOT": str(tmp_path / "sonoworld"),
         }
     )
 
@@ -90,7 +89,6 @@ def test_mmaudio_config_from_env_parses_server_settings(tmp_path):
     assert config.guidance_scale == 8.25
     assert config.full_precision is True
     assert config.inference_mode == "heun"
-    assert config.sonoworld_root == tmp_path / "sonoworld"
 
 
 def test_mmaudio_config_rejects_invalid_bool():
@@ -98,16 +96,22 @@ def test_mmaudio_config_rejects_invalid_bool():
         mmaudio_config_from_env(environ={"MMAUDIO_FULL_PRECISION": "maybe"})
 
 
-def test_mmaudio_adapter_can_find_repo_root_for_sonoworld_imports():
-    root = _find_repo_root()
+def test_mmaudio_backend_import_is_project_local():
+    model_cls = LocalMMAudioAdapter(MMAudioConfig())._load_model_cls()
 
-    assert root is not None
-    assert (root / "sonoworld" / "models" / "audio_diffusion" / "mmaudio.py").exists()
+    assert model_cls.__module__ == "panorama_foa.audio.backends.mmaudio_diffusion"
 
 
-def test_mmaudio_sonoworld_root_accepts_repo_or_package_path():
-    root = _find_repo_root()
-    assert root is not None
+def test_audio_diffusion_loader_uses_project_local_mmaudio(monkeypatch):
+    import panorama_foa.audio.backends.mmaudio_diffusion as mmaudio_diffusion
 
-    assert _normalize_sonoworld_root(root) == root
-    assert _normalize_sonoworld_root(root / "sonoworld") == root
+    class FakeMMAudioDiffusion:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    monkeypatch.setattr(mmaudio_diffusion, "MMAudioDiffusion", FakeMMAudioDiffusion)
+
+    model = load_audio_diffusion_model("mmaudio", model_name="mmaudio")
+
+    assert isinstance(model, FakeMMAudioDiffusion)
+    assert model.kwargs == {"model_name": "mmaudio"}

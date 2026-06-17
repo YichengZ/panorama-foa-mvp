@@ -17,10 +17,7 @@ The canonical repository is:
 https://github.com/YichengZ/panorama-foa-mvp
 ```
 
-SonoWorld is used as a reference codebase and for its local MMAudio wrapper.
-This MVP must remain scoped to `panorama_foa_mvp/` and must not enable
-SonoWorld's SAM3, Marble, segmentation, depth, point-cloud, 3DGS, player,
-frontend, HRTF, or true 6DoF stages.
+SonoWorld was used only as historical reference material. The runtime code in this repository is self-contained under `panorama_foa_mvp/` and must not enable SAM3, Marble, segmentation, depth, point-cloud, 3DGS, player, frontend, HRTF, or true 6DoF stages.
 
 ## Quick Start
 

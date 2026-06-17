@@ -19,14 +19,12 @@ The server should run only the `panorama_foa_mvp/` subproject.
 
 Do not call OpenAI, ElevenLabs, or any paid API during server validation.
 
-Do not enable SonoWorld's SAM3, Marble, segmentation, depth, point-cloud,
-3DGS, player, frontend, HRTF, or true 6DoF stages.
+Do not enable SAM3, Marble, segmentation, depth, point-cloud, 3DGS, player, frontend, HRTF, or true 6DoF stages.
 
 ## Environment
 
 Use Python 3.11+ or 3.12, ffmpeg, CUDA/PyTorch compatible with the NVIDIA
-driver, and the MMAudio dependencies required by SonoWorld's
-`sonoworld.models.audio_diffusion.mmaudio.MMAudioDiffusion` wrapper.
+driver, and the MMAudio dependencies required by the project-local `panorama_foa.audio.backends.mmaudio_diffusion.MMAudioDiffusion` wrapper.
 
 Collect and report:
 
@@ -59,11 +57,8 @@ MMAUDIO_STEPS=25
 MMAUDIO_GUIDANCE_SCALE=7.5
 MMAUDIO_FULL_PRECISION=false
 MMAUDIO_INFERENCE_MODE=euler
-MMAUDIO_SONOWORLD_ROOT=
 ```
 
-If `panorama_foa_mvp` is run outside the repository root, set
-`MMAUDIO_SONOWORLD_ROOT` to the SonoWorld checkout path.
 
 ## Verification
 

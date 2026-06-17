@@ -49,19 +49,10 @@ The main engineering concern is environment correctness and scheduling.
 
 ## Model And Dependency Notes
 
-SonoWorld's upstream default audio stage uses MMAudio:
-
-```yaml
-audio_generation:
-  class_path: sonoworld.stages.audio_generation.mmaudio.MMAudioGenerationStage
-  num_candidates: 3
-  sample_rate: 48000
-  seconds_total: 8.0
-```
-
-The local backend for `panorama_foa_mvp` should use MMAudio through the
-provider interface instead of enabling the upstream SonoWorld generation
-pipeline.
+The local backend for `panorama_foa_mvp` uses the project-local
+`panorama_foa.audio.backends.mmaudio_diffusion.MMAudioDiffusion` wrapper. The
+wrapper imports the external `mmaudio` package only when the real provider is
+instantiated, so normal tests remain offline and GPU-free.
 
 Expected MMAudio settings for this MVP:
 
@@ -105,18 +96,17 @@ MMAUDIO_STEPS=25
 MMAUDIO_GUIDANCE_SCALE=7.5
 MMAUDIO_FULL_PRECISION=false
 MMAUDIO_INFERENCE_MODE=euler
-MMAUDIO_SONOWORLD_ROOT=/path/to/sonoworld
 ```
 
 ## Explicitly Not Required
 
-Do not enable these upstream SonoWorld stages for this MVP:
+Do not enable these out-of-scope systems for this MVP:
 
 - SAM3 or any segmentation.
 - Marble or any visual scene generation.
 - Depth, point clouds, 3DGS, or 3D source coordinates.
 - HRTF, player, frontend, WebXR, or true 6DoF.
-- Original SonoWorld spatialization stages.
+- Any external spatialization stage outside this FOA encoder/mixer.
 
 ## Deployment Check Commands
 

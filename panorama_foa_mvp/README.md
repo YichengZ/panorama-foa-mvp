@@ -2,8 +2,7 @@
 
 This subproject converts a 2:1 equirectangular panorama into a static first-order Ambisonics WAV.
 
-The active development repository for this MVP is `https://github.com/YichengZ/panorama-foa-mvp`.
-SonoWorld is used as a reference repository and for its local MMAudio wrapper; this MVP should remain scoped to `panorama_foa_mvp/`.
+The active development repository for this MVP is `https://github.com/YichengZ/panorama-foa-mvp`. The local MMAudio wrapper now lives inside this subproject; historical SonoWorld material is reference-only.
 
 It is an MVP for a fixed listening point:
 
@@ -24,7 +23,7 @@ The current implementation supports:
 - `--audio-provider mmaudio` using a local MMAudio installation to generate mono-compatible stems that are then post-processed and encoded by this project into FOA.
 - `--audio-provider elevenlabs` for optional paid API fallback generation.
 
-MMAudio integration must stay inside this subproject's provider interface. It must not enable or depend on SonoWorld's SAM3, Marble, segmentation, depth, point-cloud, player, frontend, or true 6DoF stages.
+MMAudio integration must stay inside this subproject's provider interface. It must not enable or depend on SAM3, Marble, segmentation, depth, point-cloud, player, frontend, or true 6DoF stages.
 
 ## Install
 
@@ -61,7 +60,7 @@ RAM: 64GB+
 Disk: 100GB+ free NVMe for environments, model weights, and outputs
 OS: Ubuntu 22.04 LTS or newer
 Python: 3.12
-CUDA/PyTorch: match the installed NVIDIA driver; SonoWorld was tested with CUDA 12.4.1
+CUDA/PyTorch: match the installed NVIDIA driver and the local MMAudio package requirements
 ```
 
 For the MVP scene size, assume at most six generated stems: one global ambience plus up to five regional sources. Generation can be sequential on one GPU first, then parallelized after quality and stability are confirmed.
@@ -76,7 +75,6 @@ MMAUDIO_STEPS=25
 MMAUDIO_GUIDANCE_SCALE=7.5
 MMAUDIO_FULL_PRECISION=false
 MMAUDIO_INFERENCE_MODE=euler
-MMAUDIO_SONOWORLD_ROOT=/path/to/sonoworld
 ```
 
 Server smoke command for the provided starship panorama:
@@ -102,7 +100,7 @@ Configure `.env` from `.env.example` and use:
 
 ```bash
 python -m panorama_foa.cli generate \
-  --panorama ../test-inputs/panorama.jpg \
+  --panorama assets/panoramas/starship_captain_private_quarters.png \
   --output ../outputs/park_001 \
   --duration 16 \
   --audio-provider elevenlabs \
@@ -126,7 +124,7 @@ The WAV header alone does not fully describe Ambisonics semantics, so always kee
 
 ## Attribution
 
-This MVP is inspired by SonoWorld's image understanding and layered audio-generation structure, and uses SonoWorld's local MMAudio wrapper when available. It is independent from the upstream CUDA, 3D, segmentation, rendering, and viewer stages.
+This MVP keeps a project-local MMAudio wrapper derived from earlier reference work. It is independent from upstream 3D, segmentation, rendering, and viewer stages.
 
 ## Tests
 

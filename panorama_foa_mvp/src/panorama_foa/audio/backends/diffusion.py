@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 @dataclass
@@ -13,27 +13,22 @@ class AudioDiffusionConfig:
     sample_rate: int
     steps: int = 0
     guidance_scale: float = 1.0
-    seconds_start: Optional[float] = 0.0
-    seconds_total: Optional[float] = None
+    seconds_start: float | None = 0.0
+    seconds_total: float | None = None
     model_name: str = ""
-    variant: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    variant: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class AudioDiffusionConditioning:
     """Opaque conditioning payload owned by each backend."""
 
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class AudioDiffusionModel(ABC):
-    """Small release-facing wrapper for audio diffusion models.
-
-    Subclasses expose text-to-audio and video-to-audio separately. A backend
-    that does not support one of them should keep the default implementation,
-    which raises a clear error when that feature is requested.
-    """
+    """Small wrapper interface for optional local audio diffusion backends."""
 
     supports_t2a: bool = False
     supports_v2a: bool = False
@@ -46,9 +41,9 @@ class AudioDiffusionModel(ABC):
         self,
         prompt: str,
         *,
-        negative_prompt: Optional[str] = None,
-        condition: Optional[AudioDiffusionConditioning] = None,
-        config: Optional[AudioDiffusionConfig] = None,
+        negative_prompt: str | None = None,
+        condition: AudioDiffusionConditioning | None = None,
+        config: AudioDiffusionConfig | None = None,
         **kwargs: Any,
     ) -> Any:
         raise NotImplementedError(
@@ -59,10 +54,10 @@ class AudioDiffusionModel(ABC):
         self,
         video_path: str | Path,
         *,
-        prompt: Optional[str] = None,
-        negative_prompt: Optional[str] = None,
-        condition: Optional[AudioDiffusionConditioning] = None,
-        config: Optional[AudioDiffusionConfig] = None,
+        prompt: str | None = None,
+        negative_prompt: str | None = None,
+        condition: AudioDiffusionConditioning | None = None,
+        config: AudioDiffusionConfig | None = None,
         **kwargs: Any,
     ) -> Any:
         raise NotImplementedError(
@@ -72,13 +67,12 @@ class AudioDiffusionModel(ABC):
     def generate_audio(
         self,
         *,
-        text_prompt: Optional[str] = None,
-        video_path: Optional[str | Path] = None,
-        condition: Optional[AudioDiffusionConditioning] = None,
-        config: Optional[AudioDiffusionConfig] = None,
+        text_prompt: str | None = None,
+        video_path: str | Path | None = None,
+        condition: AudioDiffusionConditioning | None = None,
+        config: AudioDiffusionConfig | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Compatibility dispatcher for older callers."""
         if video_path is not None:
             return self.generate_v2a(
                 video_path,
@@ -104,15 +98,11 @@ class AudioDiffusionModel(ABC):
 
 
 def load_audio_diffusion_model(backend: str, **kwargs: Any) -> AudioDiffusionModel:
-    """Build an audio diffusion model by backend name.
-
-    Imports are intentionally local so optional backend dependencies are only
-    loaded when the backend is actually requested.
-    """
     key = backend.strip().lower().replace("-", "_")
     if key in {"mmaudio", "mm_audio"}:
-        from sonoworld.models.audio_diffusion.mmaudio import MMAudioDiffusion
+        from panorama_foa.audio.backends.mmaudio_diffusion import MMAudioDiffusion
 
         return MMAudioDiffusion(**kwargs)
 
     raise ValueError(f"Unknown audio diffusion backend: {backend}")
+

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -9,7 +8,6 @@ import soundfile as sf
 
 from panorama_foa.config import (
     MMAudioConfig,
-    PROJECT_ROOT,
     Settings,
     mmaudio_config_from_env,
 )
@@ -26,17 +24,11 @@ class MMAudioAdapter(Protocol):
         ...
 
 
-class SonoWorldMMAudioAdapter:
-    """Thin adapter around SonoWorld's existing MMAudio wrapper."""
+class LocalMMAudioAdapter:
+    """Thin adapter around the project-local MMAudio diffusion wrapper."""
 
     def __init__(self, config: MMAudioConfig) -> None:
         self.config = config
-        sonoworld_root = _normalize_sonoworld_root(config.sonoworld_root) or _find_repo_root()
-        if sonoworld_root is not None:
-            root = str(sonoworld_root)
-            if root not in sys.path:
-                sys.path.insert(0, root)
-
         self.model_cls = self._load_model_cls()
         self.model: Any | None = None
         self._model_duration_seconds: float | None = None
@@ -52,11 +44,11 @@ class SonoWorldMMAudioAdapter:
 
     def _load_model_cls(self) -> Any:
         try:
-            from sonoworld.models.audio_diffusion.mmaudio import MMAudioDiffusion
+            from panorama_foa.audio.backends.mmaudio_diffusion import MMAudioDiffusion
         except ImportError as exc:
             raise MMAudioProviderError(
-                "MMAudio is not installed. Install SonoWorld's MMAudio dependencies "
-                "on the GPU server or set MMAUDIO_SONOWORLD_ROOT to that checkout."
+                "MMAudio is not installed. Install the local MMAudio GPU dependencies "
+                "and ensure the upstream mmaudio package is importable."
             ) from exc
         return MMAudioDiffusion
 
@@ -106,7 +98,7 @@ class MMAudioTextToAudioProvider:
         if settings is not None:
             config = settings.mmaudio_config()
         self.config = config or mmaudio_config_from_env()
-        self.adapter = adapter or SonoWorldMMAudioAdapter(self.config)
+        self.adapter = adapter or LocalMMAudioAdapter(self.config)
         self.sample_rate = int(getattr(self.adapter, "sample_rate", 44100))
 
     @classmethod
@@ -153,22 +145,3 @@ def _as_mono_float32(audio: Any) -> np.ndarray:
     elif array.ndim == 0:
         array = array.reshape(1)
     return np.clip(array.reshape(-1), -1.0, 1.0).astype(np.float32)
-
-
-def _find_repo_root() -> Path | None:
-    candidate = PROJECT_ROOT.parent
-    marker = candidate / "sonoworld" / "models" / "audio_diffusion" / "mmaudio.py"
-    if marker.exists():
-        return candidate
-    return None
-
-
-def _normalize_sonoworld_root(path: Path | None) -> Path | None:
-    if path is None:
-        return None
-    candidate = Path(path).expanduser()
-    if (candidate / "sonoworld" / "models" / "audio_diffusion" / "mmaudio.py").exists():
-        return candidate
-    if (candidate / "models" / "audio_diffusion" / "mmaudio.py").exists():
-        return candidate.parent
-    return candidate

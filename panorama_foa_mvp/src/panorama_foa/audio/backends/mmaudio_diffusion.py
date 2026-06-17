@@ -3,9 +3,9 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
-from sonoworld.models.audio_diffusion import (
+from panorama_foa.audio.backends.diffusion import (
     AudioDiffusionConditioning,
     AudioDiffusionConfig,
     AudioDiffusionModel,
@@ -13,7 +13,7 @@ from sonoworld.models.audio_diffusion import (
 
 
 @dataclass
-class MMAudioConfig(AudioDiffusionConfig):
+class MMAudioDiffusionConfig(AudioDiffusionConfig):
     spectrogram_frame_rate: int = 0
     sequence_cfg: Any = None
     sampler_type: str = "euler"
@@ -27,11 +27,11 @@ class MMAudioConditioning(AudioDiffusionConditioning):
 
 
 class MMAudioDiffusion(AudioDiffusionModel):
-    """Release wrapper around the upstream `mmaudio` package.
+    """Local wrapper around the upstream `mmaudio` package.
 
-    The external package and torch are imported only when this class is
-    instantiated. Importing `sonoworld.models.audio_diffusion.mmaudio` itself is
-    therefore safe in environments that do not have MMAudio installed.
+    Heavy dependencies such as torch and mmaudio are imported only when the
+    model is instantiated, so offline tests can import this module without a GPU
+    runtime.
     """
 
     supports_t2a = True
@@ -47,7 +47,7 @@ class MMAudioDiffusion(AudioDiffusionModel):
         full_precision: bool = True,
         inference_mode: str = "euler",
         model_path: str | Path = ".cache/weights/mmaudio",
-        device: Optional[str] = None,
+        device: str | None = None,
     ) -> None:
         if model_name != "mmaudio":
             raise ValueError(f"MMAudioDiffusion only supports model_name='mmaudio', got {model_name!r}.")
@@ -89,9 +89,7 @@ class MMAudioDiffusion(AudioDiffusionModel):
         self.sequence_cfg.duration = self.seconds_total
 
         self.model = get_my_mmaudio(model_cfg.model_name).to(self.dtype)
-        self.model.load_weights(
-            self._torch_load_weights(model_cfg.model_path),
-        )
+        self.model.load_weights(self._torch_load_weights(model_cfg.model_path))
         self.model.update_seq_lengths(
             self.sequence_cfg.latent_seq_len,
             self.sequence_cfg.clip_seq_len,
@@ -115,8 +113,8 @@ class MMAudioDiffusion(AudioDiffusionModel):
             num_steps=self.steps,
         )
 
-    def get_config(self) -> MMAudioConfig:
-        return MMAudioConfig(
+    def get_config(self) -> MMAudioDiffusionConfig:
+        return MMAudioDiffusionConfig(
             sample_rate=int(self.sequence_cfg.sampling_rate),
             steps=self.steps,
             guidance_scale=self.guidance_scale,
@@ -131,8 +129,8 @@ class MMAudioDiffusion(AudioDiffusionModel):
 
     def get_conditioning(
         self,
-        text_prompt: Optional[str] = None,
-        video_path: Optional[str | Path] = None,
+        text_prompt: str | None = None,
+        video_path: str | Path | None = None,
     ) -> MMAudioConditioning:
         batch_size = 1
         clip_batch_size_multiplier = 40
@@ -178,9 +176,9 @@ class MMAudioDiffusion(AudioDiffusionModel):
         self,
         prompt: str,
         *,
-        negative_prompt: Optional[str] = None,
-        condition: Optional[MMAudioConditioning] = None,
-        config: Optional[MMAudioConfig] = None,
+        negative_prompt: str | None = None,
+        condition: MMAudioConditioning | None = None,
+        config: MMAudioDiffusionConfig | None = None,
         **kwargs: Any,
     ) -> Any:
         return self.generate_audio(
@@ -193,10 +191,10 @@ class MMAudioDiffusion(AudioDiffusionModel):
         self,
         video_path: str | Path,
         *,
-        prompt: Optional[str] = None,
-        negative_prompt: Optional[str] = None,
-        condition: Optional[MMAudioConditioning] = None,
-        config: Optional[MMAudioConfig] = None,
+        prompt: str | None = None,
+        negative_prompt: str | None = None,
+        condition: MMAudioConditioning | None = None,
+        config: MMAudioDiffusionConfig | None = None,
         **kwargs: Any,
     ) -> Any:
         return self.generate_audio(
@@ -209,10 +207,10 @@ class MMAudioDiffusion(AudioDiffusionModel):
     def generate_audio(
         self,
         *,
-        text_prompt: Optional[str] = None,
-        video_path: Optional[str | Path] = None,
-        condition: Optional[MMAudioConditioning] = None,
-        config: Optional[MMAudioConfig] = None,
+        text_prompt: str | None = None,
+        video_path: str | Path | None = None,
+        condition: MMAudioConditioning | None = None,
+        config: MMAudioDiffusionConfig | None = None,
         **kwargs: Any,
     ) -> Any:
         import torch
@@ -229,10 +227,10 @@ class MMAudioDiffusion(AudioDiffusionModel):
     def _generate_audio_no_grad(
         self,
         *,
-        text_prompt: Optional[str] = None,
-        video_path: Optional[str | Path] = None,
-        condition: Optional[MMAudioConditioning] = None,
-        config: Optional[MMAudioConfig] = None,
+        text_prompt: str | None = None,
+        video_path: str | Path | None = None,
+        condition: MMAudioConditioning | None = None,
+        config: MMAudioDiffusionConfig | None = None,
         **kwargs: Any,
     ) -> Any:
         if config is None:
@@ -259,11 +257,9 @@ class MMAudioDiffusion(AudioDiffusionModel):
         x1 = self.flow_matching.to_data(cfg_ode_wrapper, x0)
         x1 = self.model.unnormalize(x1)
         spec = self.feature_utils.decode(x1)
-        audio = self.feature_utils.vocode(spec)
+        return self.feature_utils.vocode(spec)
 
-        return audio
-
-    def get_flow(self, z_t: Any, t: Any, condition: MMAudioConditioning, config: MMAudioConfig) -> Any:
+    def get_flow(self, z_t: Any, t: Any, condition: MMAudioConditioning, config: MMAudioDiffusionConfig) -> Any:
         return _ode_wrapper(
             self.model,
             t,
@@ -273,10 +269,10 @@ class MMAudioDiffusion(AudioDiffusionModel):
             config.guidance_scale,
         )
 
-    def get_v(self, z_t: Any, t: Any, condition: MMAudioConditioning, config: MMAudioConfig) -> Any:
+    def get_v(self, z_t: Any, t: Any, condition: MMAudioConditioning, config: MMAudioDiffusionConfig) -> Any:
         raise ValueError("MMAudio does not support v prediction; use get_flow instead.")
 
-    def get_x0(self, z_t: Any, t: Any, condition: MMAudioConditioning, config: MMAudioConfig) -> Any:
+    def get_x0(self, z_t: Any, t: Any, condition: MMAudioConditioning, config: MMAudioDiffusionConfig) -> Any:
         flow = self.get_flow(z_t, t, condition, config)
         return z_t - flow * t
 
@@ -285,7 +281,7 @@ class MMAudioDiffusion(AudioDiffusionModel):
         z_t: Any,
         t: Any,
         condition: MMAudioConditioning,
-        config: MMAudioConfig,
+        config: MMAudioDiffusionConfig,
     ) -> Any:
         raise ValueError("MMAudio does not support epsilon prediction; use get_flow instead.")
 
@@ -315,7 +311,7 @@ class MMAudioDiffusion(AudioDiffusionModel):
         start_t: Any,
         condition: MMAudioConditioning,
         steps: int,
-        guidance_scale: Optional[float] = None,
+        guidance_scale: float | None = None,
     ) -> Any:
         config = self.get_config()
         guidance_scale = guidance_scale if guidance_scale is not None else config.guidance_scale
@@ -364,6 +360,7 @@ class MMAudioDiffusion(AudioDiffusionModel):
         except TypeError:
             return torch.load(path, map_location="cpu")
 
+
 def _ode_wrapper(
     model: Any,
     t: Any,
@@ -379,3 +376,4 @@ def _ode_wrapper(
         cfg_strength * model.predict_flow(latent, t, conditions)
         + (1.0 - cfg_strength) * model.predict_flow(latent, t, empty_conditions)
     )
+

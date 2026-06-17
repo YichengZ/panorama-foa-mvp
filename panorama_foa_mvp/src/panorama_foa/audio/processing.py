@@ -46,10 +46,15 @@ def process_mono_audio(
     return signal.astype(np.float32)
 
 
-def requested_generation_duration(duration_seconds: float, *, loop: bool) -> float:
+def requested_generation_duration(
+    duration_seconds: float,
+    *,
+    loop: bool,
+    loop_crossfade_seconds: float = DEFAULT_LOOP_CROSSFADE_SECONDS,
+) -> float:
     if not loop:
         return float(duration_seconds)
-    return float(duration_seconds) + DEFAULT_LOOP_CROSSFADE_SECONDS
+    return float(duration_seconds) + float(loop_crossfade_seconds)
 
 
 def _fit_length(signal: np.ndarray, target_samples: int) -> np.ndarray:

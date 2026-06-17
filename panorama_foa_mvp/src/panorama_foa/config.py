@@ -18,7 +18,6 @@ MMAUDIO_STEPS_ENV = "MMAUDIO_STEPS"
 MMAUDIO_GUIDANCE_SCALE_ENV = "MMAUDIO_GUIDANCE_SCALE"
 MMAUDIO_FULL_PRECISION_ENV = "MMAUDIO_FULL_PRECISION"
 MMAUDIO_INFERENCE_MODE_ENV = "MMAUDIO_INFERENCE_MODE"
-MMAUDIO_SONOWORLD_ROOT_ENV = "MMAUDIO_SONOWORLD_ROOT"
 
 DEFAULT_OPENAI_VISION_MODEL = "gpt-4.1"
 DEFAULT_ELEVENLABS_SOUND_MODEL = "eleven_text_to_sound_v2"
@@ -61,7 +60,6 @@ class MMAudioConfig:
     guidance_scale: float = DEFAULT_MMAUDIO_GUIDANCE_SCALE
     full_precision: bool = DEFAULT_MMAUDIO_FULL_PRECISION
     inference_mode: str = DEFAULT_MMAUDIO_INFERENCE_MODE
-    sonoworld_root: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -80,7 +78,6 @@ class Settings:
     mmaudio_guidance_scale: float = DEFAULT_MMAUDIO_GUIDANCE_SCALE
     mmaudio_full_precision: bool = DEFAULT_MMAUDIO_FULL_PRECISION
     mmaudio_inference_mode: str = DEFAULT_MMAUDIO_INFERENCE_MODE
-    mmaudio_sonoworld_root: Path | None = None
 
     @classmethod
     def from_env(
@@ -128,7 +125,6 @@ class Settings:
             ),
             mmaudio_inference_mode=_read_env(env, MMAUDIO_INFERENCE_MODE_ENV)
             or DEFAULT_MMAUDIO_INFERENCE_MODE,
-            mmaudio_sonoworld_root=_read_optional_path(env, MMAUDIO_SONOWORLD_ROOT_ENV),
         )
 
     def openai_config(self) -> OpenAIPlannerConfig:
@@ -156,7 +152,6 @@ class Settings:
             guidance_scale=self.mmaudio_guidance_scale,
             full_precision=self.mmaudio_full_precision,
             inference_mode=self.mmaudio_inference_mode,
-            sonoworld_root=self.mmaudio_sonoworld_root,
         )
 
 
@@ -278,10 +273,3 @@ def _read_bool_env(env: Mapping[str, str], name: str, default: bool) -> bool:
     if normalized in {"0", "false", "no", "off"}:
         return False
     raise ConfigurationError(f"{name} must be a boolean value.")
-
-
-def _read_optional_path(env: Mapping[str, str], name: str) -> Path | None:
-    value = _read_env(env, name)
-    if not value:
-        return None
-    return Path(value).expanduser()
