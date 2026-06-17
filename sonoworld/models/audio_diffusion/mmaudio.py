@@ -215,6 +215,26 @@ class MMAudioDiffusion(AudioDiffusionModel):
         config: Optional[MMAudioConfig] = None,
         **kwargs: Any,
     ) -> Any:
+        import torch
+
+        with torch.no_grad():
+            return self._generate_audio_no_grad(
+                text_prompt=text_prompt,
+                video_path=video_path,
+                condition=condition,
+                config=config,
+                **kwargs,
+            )
+
+    def _generate_audio_no_grad(
+        self,
+        *,
+        text_prompt: Optional[str] = None,
+        video_path: Optional[str | Path] = None,
+        condition: Optional[MMAudioConditioning] = None,
+        config: Optional[MMAudioConfig] = None,
+        **kwargs: Any,
+    ) -> Any:
         if config is None:
             config = self.get_config()
         if condition is None:
@@ -222,25 +242,24 @@ class MMAudioDiffusion(AudioDiffusionModel):
 
         import torch
 
-        with torch.no_grad():
-            x0 = torch.randn(
-                1,
-                self.model.latent_seq_len,
-                self.model.latent_dim,
-                device=self.device,
-                dtype=self.dtype,
-            )
-            cfg_ode_wrapper = lambda t, x: self.model.ode_wrapper(
-                t,
-                x,
-                condition.conditioning,
-                condition.neg_conditioning,
-                config.guidance_scale,
-            )
-            x1 = self.flow_matching.to_data(cfg_ode_wrapper, x0)
-            x1 = self.model.unnormalize(x1)
-            spec = self.feature_utils.decode(x1)
-            audio = self.feature_utils.vocode(spec)
+        x0 = torch.randn(
+            1,
+            self.model.latent_seq_len,
+            self.model.latent_dim,
+            device=self.device,
+            dtype=self.dtype,
+        )
+        cfg_ode_wrapper = lambda t, x: self.model.ode_wrapper(
+            t,
+            x,
+            condition.conditioning,
+            condition.neg_conditioning,
+            config.guidance_scale,
+        )
+        x1 = self.flow_matching.to_data(cfg_ode_wrapper, x0)
+        x1 = self.model.unnormalize(x1)
+        spec = self.feature_utils.decode(x1)
+        audio = self.feature_utils.vocode(spec)
 
         return audio
 

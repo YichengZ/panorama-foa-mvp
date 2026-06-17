@@ -138,7 +138,10 @@ class MMAudioTextToAudioProvider:
 
 def _as_mono_float32(audio: Any) -> np.ndarray:
     if hasattr(audio, "detach"):
-        audio = audio.detach().cpu().numpy()
+        audio = audio.detach()
+        if hasattr(audio, "float"):
+            audio = audio.float()
+        audio = audio.cpu().numpy()
     array = np.asarray(audio, dtype=np.float32)
     while array.ndim > 2:
         array = array[0]
