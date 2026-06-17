@@ -7,6 +7,7 @@ from scipy.signal import resample_poly
 TARGET_SAMPLE_RATE = 48000
 REFERENCE_PEAK = 10 ** (-6.0 / 20.0)
 SILENCE_THRESHOLD = 1e-5
+DEFAULT_LOOP_CROSSFADE_SECONDS = 2.0
 
 
 def process_mono_audio(
@@ -16,6 +17,8 @@ def process_mono_audio(
     duration_seconds: float,
     gain_db: float,
     source_id: str,
+    loop: bool = False,
+    loop_crossfade_seconds: float = DEFAULT_LOOP_CROSSFADE_SECONDS,
 ) -> np.ndarray:
     signal = np.asarray(audio, dtype=np.float32)
     if signal.ndim == 2:
@@ -28,7 +31,10 @@ def process_mono_audio(
 
     signal = signal - float(np.mean(signal)) if signal.size else signal
     target_samples = round(duration_seconds * TARGET_SAMPLE_RATE)
-    signal = _fit_length(signal, target_samples)
+    if loop:
+        signal = _fit_loop_length(signal, target_samples, loop_crossfade_seconds)
+    else:
+        signal = _fit_length(signal, target_samples)
     signal = signal - float(np.mean(signal)) if signal.size else signal
 
     peak = float(np.max(np.abs(signal))) if signal.size else 0.0
@@ -38,6 +44,12 @@ def process_mono_audio(
     signal = signal * (REFERENCE_PEAK / peak)
     signal = signal * (10 ** (gain_db / 20.0))
     return signal.astype(np.float32)
+
+
+def requested_generation_duration(duration_seconds: float, *, loop: bool) -> float:
+    if not loop:
+        return float(duration_seconds)
+    return float(duration_seconds) + DEFAULT_LOOP_CROSSFADE_SECONDS
 
 
 def _fit_length(signal: np.ndarray, target_samples: int) -> np.ndarray:
@@ -64,3 +76,33 @@ def _fit_length(signal: np.ndarray, target_samples: int) -> np.ndarray:
             if count > 0:
                 tiled[start:end] *= ramp[:count]
     return tiled
+
+
+def _fit_loop_length(
+    signal: np.ndarray,
+    target_samples: int,
+    loop_crossfade_seconds: float,
+) -> np.ndarray:
+    if signal.size == 0:
+        return np.zeros(target_samples, dtype=np.float32)
+
+    fade_samples = min(
+        round(loop_crossfade_seconds * TARGET_SAMPLE_RATE),
+        max(1, target_samples // 4),
+    )
+    needed_samples = target_samples + fade_samples
+    if signal.shape[0] < needed_samples:
+        signal = _fit_length(signal, needed_samples)
+
+    body = signal[:target_samples].astype(np.float32, copy=True)
+    tail = signal[target_samples : target_samples + fade_samples].astype(np.float32, copy=False)
+    if tail.shape[0] < fade_samples:
+        tail = _fit_length(tail, fade_samples)
+
+    if fade_samples > 1:
+        phase = np.linspace(0.0, np.pi / 2.0, fade_samples, dtype=np.float32)
+        tail_gain = np.cos(phase)
+        head_gain = np.sin(phase)
+        body[:fade_samples] = (tail * tail_gain) + (body[:fade_samples] * head_gain)
+
+    return body.astype(np.float32, copy=False)

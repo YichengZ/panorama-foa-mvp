@@ -8,10 +8,11 @@ import numpy as np
 def mix_foa_layers(
     layers: Sequence[np.ndarray],
     *,
-    target_dbfs: float = -1.0,
+    target_dbfs: float = -3.0,
+    target_rms_dbfs: float | None = -30.0,
     return_scale: bool = False,
 ) -> np.ndarray | tuple[np.ndarray, float]:
-    """Sum FOA layers and apply one final scalar limiter when needed."""
+    """Sum FOA layers and apply one final scalar loudness stage."""
     arrays = [_as_foa_array(layer) for layer in layers]
     if not arrays:
         raise ValueError("at least one FOA layer is required")
@@ -24,11 +25,20 @@ def mix_foa_layers(
     for array in arrays:
         mix += array
 
+    scale = 1.0
+    if target_rms_dbfs is not None:
+        rms = float(np.sqrt(np.mean(np.asarray(mix, dtype=np.float64) ** 2))) if mix.size else 0.0
+        target_rms = float(10 ** (target_rms_dbfs / 20.0))
+        if rms > 0.0:
+            scale *= target_rms / rms
+            mix *= target_rms / rms
+
     target_peak = float(10 ** (target_dbfs / 20.0))
     peak = float(np.max(np.abs(mix))) if mix.size else 0.0
-    scale = target_peak / peak if peak > target_peak and peak > 0.0 else 1.0
-    if scale != 1.0:
-        mix *= scale
+    peak_scale = target_peak / peak if peak > target_peak and peak > 0.0 else 1.0
+    if peak_scale != 1.0:
+        scale *= peak_scale
+        mix *= peak_scale
 
     if return_scale:
         return mix.astype(np.float32, copy=False), scale

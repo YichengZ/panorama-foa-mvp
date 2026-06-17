@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,7 +13,7 @@ from panorama_foa.ambisonics.foa import encode_global_ambience, encode_regional_
 from panorama_foa.ambisonics.mixer import mix_foa_layers
 from panorama_foa.audio.decode import decode_to_mono_wav
 from panorama_foa.audio.mock import MockTextToAudioProvider
-from panorama_foa.audio.processing import TARGET_SAMPLE_RATE, process_mono_audio
+from panorama_foa.audio.processing import TARGET_SAMPLE_RATE, process_mono_audio, requested_generation_duration
 from panorama_foa.audio.provider_base import TextToAudioProvider
 from panorama_foa.coordinates import normalized_panorama_to_angles
 from panorama_foa.planner.base import ScenePlanner
@@ -26,6 +27,8 @@ class PipelineResult:
     plan: ScenePlan
     wav_path: Path
     metadata_path: Path
+    loopcheck_path: Path
+    metrics_path: Path
 
 
 def validate_and_filter_plan(plan: ScenePlan, *, duration_seconds: float, max_sources: int) -> ScenePlan:
@@ -91,6 +94,16 @@ class PanoramaToFOAPipeline:
         (output_dir / "scene_plan.json").write_text(plan.model_dump_json(indent=2) + "\n")
 
         layers = []
+        metrics: dict[str, object] = {
+            "schema_version": "1.0",
+            "base_loop_duration_seconds": float(plan.duration_seconds),
+            "loopcheck_repeat_count": 2,
+            "loopcheck_duration_seconds": float(plan.duration_seconds * 2),
+            "target_rms_dbfs": -30.0,
+            "peak_ceiling_dbfs": -3.0,
+            "raw_audio": {},
+            "stems": {},
+        }
         raw_dir = output_dir / "raw_audio"
         stems_dir = output_dir / "stems"
         raw_dir.mkdir(exist_ok=True)
@@ -104,7 +117,9 @@ class PanoramaToFOAPipeline:
             duration_seconds=plan.duration_seconds,
             raw_path=raw_dir / f"global_ambience{self._raw_extension()}",
             stem_path=stems_dir / "global_ambience.wav",
+            metrics=metrics,
         )
+        metrics["stems"][plan.global_ambience.id] = _audio_metrics(global_stem, TARGET_SAMPLE_RATE)
         layers.append(encode_global_ambience(global_stem))
 
         for index, source in enumerate(plan.regional_sources):
@@ -118,7 +133,9 @@ class PanoramaToFOAPipeline:
                 duration_seconds=plan.duration_seconds,
                 raw_path=raw_dir / raw_name,
                 stem_path=stems_dir / stem_name,
+                metrics=metrics,
             )
+            metrics["stems"][source.id] = _audio_metrics(stem, TARGET_SAMPLE_RATE)
             azimuth, elevation = normalized_panorama_to_angles(
                 source.center_u,
                 source.center_v,
@@ -136,10 +153,24 @@ class PanoramaToFOAPipeline:
         mix = mix_foa_layers(layers)
         wav_path = output_dir / "scene_foa.wav"
         metadata_path = output_dir / "scene_foa.metadata.json"
+        loopcheck_path = output_dir / "scene_foa_loopcheck.wav"
+        metrics_path = output_dir / "scene_foa.metrics.json"
         export_foa_wav(wav_path, mix, sample_rate=TARGET_SAMPLE_RATE)
+        export_foa_wav(loopcheck_path, np.tile(mix, (2, 1)), sample_rate=TARGET_SAMPLE_RATE)
         write_metadata(metadata_path, duration_seconds=plan.duration_seconds, yaw_offset_deg=self.yaw_offset_deg)
+        metrics["final"] = _audio_metrics(mix, TARGET_SAMPLE_RATE)
+        metrics["loopcheck"] = _audio_metrics(np.tile(mix, (2, 1)), TARGET_SAMPLE_RATE)
+        metrics_path.write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
         self._verify_wav(wav_path, plan.duration_seconds)
-        return PipelineResult(output_dir=output_dir, plan=plan, wav_path=wav_path, metadata_path=metadata_path)
+        self._verify_wav(loopcheck_path, plan.duration_seconds * 2)
+        return PipelineResult(
+            output_dir=output_dir,
+            plan=plan,
+            wav_path=wav_path,
+            metadata_path=metadata_path,
+            loopcheck_path=loopcheck_path,
+            metrics_path=metrics_path,
+        )
 
     def _generate_stem(
         self,
@@ -151,11 +182,13 @@ class PanoramaToFOAPipeline:
         duration_seconds: float,
         raw_path: Path,
         stem_path: Path,
+        metrics: dict[str, object],
     ) -> np.ndarray:
-        if self.force or not raw_path.exists():
+        generation_duration = requested_generation_duration(duration_seconds, loop=loop)
+        if self.force or not raw_path.exists() or not _raw_has_required_duration(raw_path, generation_duration):
             self.audio_provider.generate(
                 prompt=prompt,
-                duration_seconds=duration_seconds,
+                duration_seconds=generation_duration,
                 loop=loop,
                 output_path=raw_path,
             )
@@ -165,12 +198,14 @@ class PanoramaToFOAPipeline:
             decode_to_mono_wav(raw_path, decoded_path)
             readable_path = decoded_path
         data, sample_rate = sf.read(readable_path, dtype="float32", always_2d=False)
+        metrics["raw_audio"][source_id] = _audio_metrics(data, sample_rate)
         stem = process_mono_audio(
             data,
             sample_rate=sample_rate,
             duration_seconds=duration_seconds,
             gain_db=gain_db,
             source_id=source_id,
+            loop=loop,
         )
         sf.write(stem_path, stem, TARGET_SAMPLE_RATE, subtype="PCM_16")
         if readable_path != raw_path:
@@ -212,3 +247,48 @@ def build_mock_manual_pipeline(plan_path: Path, *, yaw_offset_deg: float = 0.0, 
 def _validate_duration(duration_seconds: float) -> None:
     if not 0.5 <= float(duration_seconds) <= 30.0:
         raise ValueError("duration_seconds must be between 0.5 and 30.0 seconds")
+
+
+def _audio_metrics(audio: np.ndarray, sample_rate: int) -> dict[str, float | int]:
+    array = np.asarray(audio, dtype=np.float32)
+    if array.ndim == 1:
+        mono = array
+        channels = 1
+    else:
+        channels = int(array.shape[1])
+        mono = np.mean(array, axis=1)
+    peak = float(np.max(np.abs(array))) if array.size else 0.0
+    rms = float(np.sqrt(np.mean(np.asarray(array, dtype=np.float64) ** 2))) if array.size else 0.0
+    frames = int(array.shape[0]) if array.ndim else 0
+    edge_samples = min(round(0.1 * sample_rate), frames // 2)
+    endpoint_jump = float(abs(mono[0] - mono[-1])) if frames else 0.0
+    if edge_samples:
+        edge_diff = mono[:edge_samples] - mono[-edge_samples:]
+        edge_rms = float(np.sqrt(np.mean(np.asarray(edge_diff, dtype=np.float64) ** 2)))
+    else:
+        edge_rms = 0.0
+    return {
+        "sample_rate": int(sample_rate),
+        "channels": channels,
+        "frames": frames,
+        "peak": peak,
+        "peak_dbfs": _dbfs(peak),
+        "rms": rms,
+        "rms_dbfs": _dbfs(rms),
+        "endpoint_jump": endpoint_jump,
+        "edge_100ms_diff_dbfs": _dbfs(edge_rms),
+    }
+
+
+def _dbfs(value: float) -> float:
+    return float(20.0 * np.log10(max(float(value), 1e-12)))
+
+
+def _raw_has_required_duration(path: Path, duration_seconds: float) -> bool:
+    if path.suffix.lower() not in {".wav", ".flac", ".aiff", ".aif"}:
+        return True
+    try:
+        info = sf.info(path)
+    except sf.LibsndfileError:
+        return False
+    return info.frames >= round(duration_seconds * info.samplerate)

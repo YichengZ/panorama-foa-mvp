@@ -186,6 +186,8 @@ def test_mock_cli_end_to_end_outputs_contract_files(tmp_path, panorama_fixture, 
     assert (output / "scene_plan.json").exists()
     assert (output / "scene_foa.wav").exists()
     assert (output / "scene_foa.metadata.json").exists()
+    assert (output / "scene_foa_loopcheck.wav").exists()
+    assert (output / "scene_foa.metrics.json").exists()
     assert (output / "panorama_analysis.jpg").exists()
     assert (output / "raw_audio" / "global_ambience.wav").exists()
     assert (output / "stems" / "global_ambience.wav").exists()
@@ -194,6 +196,13 @@ def test_mock_cli_end_to_end_outputs_contract_files(tmp_path, panorama_fixture, 
     assert info.samplerate == 48000
     assert info.channels == 4
     assert info.frames == 48000
+    loopcheck_info = sf.info(output / "scene_foa_loopcheck.wav")
+    assert loopcheck_info.samplerate == 48000
+    assert loopcheck_info.channels == 4
+    assert loopcheck_info.frames == 96000
+
+    raw_info = sf.info(output / "raw_audio" / "global_ambience.wav")
+    assert raw_info.frames == 144000
 
     metadata = json.loads((output / "scene_foa.metadata.json").read_text())
     assert metadata["ambisonics"]["channel_labels"] == ["W", "Y", "Z", "X"]
@@ -202,6 +211,13 @@ def test_mock_cli_end_to_end_outputs_contract_files(tmp_path, panorama_fixture, 
 
     plan = json.loads((output / "scene_plan.json").read_text())
     assert plan["duration_seconds"] == 1.0
+    metrics = json.loads((output / "scene_foa.metrics.json").read_text())
+    assert metrics["base_loop_duration_seconds"] == 1.0
+    assert metrics["loopcheck_repeat_count"] == 2
+    assert metrics["loopcheck_duration_seconds"] == 2.0
+    assert metrics["final"]["frames"] == 48000
+    assert metrics["loopcheck"]["frames"] == 96000
+    assert -31.0 <= metrics["final"]["rms_dbfs"] <= -29.0
 
 
 def test_mmaudio_cli_path_can_run_with_fake_local_provider(
@@ -339,3 +355,35 @@ def test_pipeline_decodes_non_wav_raw_audio(monkeypatch, tmp_path, panorama_fixt
 
     assert decoded_calls
     assert all(call[0].suffix == ".mp3" for call in decoded_calls)
+
+
+def test_pipeline_requests_loop_post_roll_from_audio_provider(tmp_path, panorama_fixture, fixtures_dir):
+    from panorama_foa.audio.mock import MockTextToAudioProvider
+    from panorama_foa.pipeline import build_mock_manual_pipeline
+
+    class RecordingMockProvider(MockTextToAudioProvider):
+        def __init__(self):
+            self.calls = []
+
+        def generate(self, *, prompt, duration_seconds, loop, output_path):
+            self.calls.append((prompt, duration_seconds, loop))
+            return super().generate(
+                prompt=prompt,
+                duration_seconds=duration_seconds,
+                loop=loop,
+                output_path=output_path,
+            )
+
+    provider = RecordingMockProvider()
+    pipeline = build_mock_manual_pipeline(fixtures_dir / "manual_plan.json", force=True)
+    pipeline.audio_provider = provider
+
+    pipeline.run(
+        panorama_path=panorama_fixture,
+        output_dir=tmp_path / "scene",
+        duration_seconds=1.0,
+    )
+
+    assert provider.calls
+    assert all(call[1] == pytest.approx(3.0) for call in provider.calls)
+    assert all(call[2] is True for call in provider.calls)
